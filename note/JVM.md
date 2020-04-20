@@ -106,15 +106,65 @@
 
 ​		<font color="#dd0000">运行时常量池(Runtime Constant Pool)</font>是方法区的一部分。class文件中除了有类的版本、字段、方法、接口的描述等信息外，还有一项信息是常量池(Constant Pool Table)，用于存放编译期生成的各种字面量和符号引用，这部分内容在类加载后存放到方法区的运行时常量池中。Java虚拟机对class文件的每一部分(包括常量池)的格式都有严格的规定，每一个字节用于存储那种数据都必须符合规范上的要求，这样才会被虚拟机认可、装载和执行。
 
+---
+
 ### 2.3 JVM运行时内存
 
 ​		Java堆从GC的角度还可以细分为：**新生代**(Eden区、From Survivor区和To Survivor区)和**老年代**。
 
 ![Java堆从GC的角度细分](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_6.png "Java堆从GC的角度细分")
 
+---
+
 #### 2.3.1  新生代
 
 ​		是用来存放新生的对象。一般占据堆的1/3空间。由于频繁创建对象，所以新生代会频繁出发[Minor GC](https://www.cnblogs.com/williamjie/p/9516264.html)进行垃圾回收。新生代又分为：Eden区、From Survivor区、To Survivor三个区。
+
+---
+
+##### 2.3.1.1 Eden 区
+
+​		<font color="003399">Java新对象的出生地</font>(如果新创建的对象占用内存很大，则直接分配到老年代)。当Eden区内存不够的时候会触发Minor GC，对新生代区进行一次垃圾回收。
+
+---
+
+##### 2.3.1.2 From Survivor 区
+
+​		上一次GC的幸存者，作为这一次GC的被扫描者。
+
+---
+
+##### 2.3.1.3 To Survivor 区
+
+​		保留了一次Minor GC过程中的幸存者。
+
+---
+
+##### 2.3.1.4 Minor GC 的过程
+
+```java
+	复制——>清空——>互换
+```
+
+​		Minor GC采用<font color="003399">复制算法</font>。
+
+**1. Eden、From Survivor 复制到 To Survivor，年龄 +1**
+
+​		首先，把Eden和From Survivor区域中存货的对象复制到To Survivor区域(如果有对象的年龄已经达到了老年的标准，则复制到老年代区)，同时把这些对象的年龄+1(如果To Survivor位置不够了就放到老年区)。
+
+**2. 清空Eden、From Survivor**
+
+​		然后清空Eden和From Survivor中的对象。
+
+**3. To Survivor和 From Survivor互换**
+
+​		最后，To Survivor 和 From Survivor互换，原To Survivor成为下一次GC时的 From Survivor区。
+
+#### 2.3.2 老年代
+
+
+
+
 
 
 
