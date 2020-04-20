@@ -96,7 +96,7 @@
 
 #### 2.2.4 堆(Heap-线程共享 Thread Share)-运行时数据区
 
-​		是被线程共享的一块内存区域，<font color="003399">创建的对象和数组都保存在Java堆内存中，也是垃圾收集器进行垃圾收集的最重要的内存区域。</font>由于现代VM采用分代收集算法，因此Java堆从GC的角度还可以细分为：**新生代**(Eden区Share、From Survivor区和To Survivor区)和**老年代**。
+​		是被线程共享的一块内存区域，<font color="003399">创建的对象和数组都保存在Java堆内存中，也是垃圾收集器进行垃圾收集的最重要的内存区域。</font>由于现代VM采用分代收集算法，因此Java堆从GC的角度还可以细分为：**新生代**(Eden区、From Survivor区和To Survivor区)和**老年代**。
 
 ---
 
@@ -108,11 +108,13 @@
 
 ### 2.3 JVM运行时内存
 
-​		Java堆从GC的角度还可以细分为：**新生代**(Eden区Share、From Survivor区和To Survivor区)和**老年代**。
+​		Java堆从GC的角度还可以细分为：**新生代**(Eden区、From Survivor区和To Survivor区)和**老年代**。
 
 ![Java堆从GC的角度细分](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_6.png "Java堆从GC的角度细分")
 
 #### 2.3.1  新生代
+
+​		是用来存放新生的对象。一般占据堆的1/3空间。由于频繁创建对象，所以新生代会频繁出发[Minor GC](https://www.cnblogs.com/williamjie/p/9516264.html)进行垃圾回收。新生代又分为：Eden区、From Survivor区、To Survivor三个区。
 
 
 
