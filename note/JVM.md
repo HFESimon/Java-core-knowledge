@@ -49,7 +49,6 @@
         <td>这个线程接收发送到JVM的信号并调用适当的JVM方法处理</td>
     </tr>
 </table>
-
 ---
 
 ### 2.2 JVM内存区域
@@ -118,7 +117,7 @@
 
 #### 2.3.1  新生代
 
-​		是用来存放新生的对象。一般占据堆的1/3空间。由于频繁创建对象，所以新生代会频繁出发[Minor GC](https://www.cnblogs.com/williamjie/p/9516264.html)进行垃圾回收。新生代又分为：Eden区、From Survivor区、To Survivor三个区。
+​		是用来存放新生的对象。一般占据堆的1/3空间。由于频繁创建对象，所以新生代会频繁出发[Minor GC](https://www.cnblogs.com/williamjie/p/9516264.html)进行垃圾回收。[新生代](https://www.cnblogs.com/jswang/p/9056038.html)又分为：Eden区、From Survivor区、To Survivor三个区。
 
 ---
 
@@ -160,7 +159,86 @@
 
 ​		最后，To Survivor 和 From Survivor互换，原To Survivor成为下一次GC时的 From Survivor区。
 
+---
+
 #### 2.3.2 老年代
+
+​		主要存放应用程序中生命周期长的内存对象。
+
+​		老年代的对象比较稳定，所以 Major GC 不会频繁执行。在进行Major GC前一般都先进行了一次Minor GC，使得有新生代对象晋身入老年代，导致老年代空间不够用时才触发。当无法找到足够大的连续空间分配给新创建的较大对象时也会出发一次Major GC 进行垃圾回收腾出空间。
+
+​		Major GC 采用<font color="003399">标记清除算法</font>：首先扫描一次所有老年代，标记出存活的对象，然后回收没有标记的对象。Major GC的耗时比较长，因为要扫描再回收。Major GC会产生内存碎片，为了减少内存消耗，我们一般需要进行合并或者标记出来方便下次直接分配。当老年代也满了装不下的时候就会抛出OOM(Out of Memory)异常。
+
+---
+
+#### 2.3.3 永久代
+
+​		指内存的永久保存区域，主要存放class和Meta(元数据)的信息，class在被加载的时候被放入永久区域，它和存放实例的区域不同，<font color="003399"> GC不会在主程序运行期对永久区域进行清理。</font>所以这也导致了永久代的区域会随着class的增多而空间不够，最终抛出OOM异常。
+
+---
+
+##### 2.3.3.1 Java 8 与元数据
+
+​		在Java 8中，<font color="003399">永久代已经被移除，被一个称为“元数据区”(元空间)的区域所取代。</font>元空间的本质和永久代类似，元空间与永久代最大的区别在于：<font color="003399">元空间并不在虚拟机中，而是使用本地内存。</font>因此，默认情况下，元空间的大小只受本地内存限制。<font color="003399">类的元数据放入 native memory，字符串池和类的静态变量放入Java堆中</font>，这样可以加载多少类的元数据就不再由[MaxPermSize](https://www.cnblogs.com/mingforyou/p/2378143.html)控制,而是由系统实际可用空间来控制。
+
+---
+
+### 2.4 垃圾回收与算法
+
+![JVM垃圾回收与算法](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_7.png "JVM垃圾回收与算法")
+
+---
+
+#### 2.4.1 如何确定垃圾
+
+##### 2.4.1.1 引用计数法
+
+​		在Java中，引用和对象是有关联的。如果要操作对象则必须用引用进行。因此可以通过引用计数来判断一个对象是否可以回收。简单说，即一个<font color="003399">对象如果没有任何与之关联的引用，即他们的引用计数都为0，则说明对象为垃圾对象，可被GC回收。</font>
+
+```java
+public class GcDemo{
+    public static void main(String[] args){
+        GcObject obj1 = new GcObject();
+        GcObject obj2 = new GcObject();
+        
+        obj1.instance = obj2;
+        obj2.instance = obj1;
+        
+        obj1 = null;
+        obj2 = null;
+    }
+}
+
+class GcObject{
+    public Object instance = null;
+}
+```
+
+​		上述代码中obj1和obj2指向的对象都已经不可能再被访问，彼此互相引用对方导致引用计数都不为0，最终无法被GC回收，而可达性算法能解决这个问题。
+
+##### 2.4.1.2 可达性分析
+
+​		为了解决引用计数法的循环引用问题，Java使用了可达性分析的方法。通过一系列的“GC roots”对象作为起点搜索。<font color="003399">如果在“GC roots”和一个对象之间没有可达路径，则称该对象是不可达的。</font>要注意的是，不可达对象不等价于可回收对象，<font color="003399">不可达对象变为可回收对象至少要经过两次标记过程。</font>两次标记后仍然是不可达对象，则将面临回收。
+
+![可达性分析](https://images2018.cnblogs.com/blog/1368961/201804/1368961-20180406113127652-1645765895.png "可达性分析")
+
+​		由上图可以得知实例1、2、4、6都具有GC roots可达性，即存活对象，不可被GC回收的对象。而实例3、5虽然连通，但是没有与GC roots相连，即GC roots不可达对象，会被GC回收的对象。
+
+#### 2.4.2 标记清除算法(Mark-Sweep)
+
+​		该算法是最基础的垃圾回收算法，其分为两个阶段，<font color="003399">标注和清除</font>。标记阶段标记出所有需要回收的对象，清除阶段回收被标记的对象所占用的空间。如图：
+
+![标记清除示意图](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_8.png "标记清除示意图")
+
+​		从图中可以发现，该算法最大的问题是内存碎片化严重，后续可能会出现大对象找不到可利用的空间的问题。
+
+#### 2.4.3 复制算法(copying)
+
+​		该算法是为了解决Mark-Sweep算法内存碎片化的缺陷而被提出的算法。按内存容量将内存划分为等大小的两块。每次只使用其中的一块，当这一块内存满后将尚存货的对象复制到另一块上去，把已使用的内存清掉，如图：
+
+![复制算法](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_9.png "复制算法")
+
+​		这种算法虽然实现简单，内存效率高，不易产生碎片，但是最大的问题是可用内存被压缩到了原来的一半。且存活对象增多的话，copying算法效率会很低。
 
 
 
