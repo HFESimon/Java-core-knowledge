@@ -338,6 +338,12 @@ PhantomReference<String> pr = new PhantomReference<String>(new String("hello"), 
 
 #### 2.6.2 分区收集算法
 
+​		<font color="003399">[分区收集算法](https://cloud.tencent.com/developer/article/1390547)将整个堆空间划分为连续的不同小区间，每个小区间独立使用</font>，独立回收。这样做的好处是可以控制一次回收多少个小区间，根据目标停顿时间，合理地回收若干个小区间(而不是整个堆)，从而可以减少一次GC所产生的停顿。
+
+![分区收集算法](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_12.png "分区收集算法")
+
+### 2.7 GC 垃圾收集器
+
 
 
 
