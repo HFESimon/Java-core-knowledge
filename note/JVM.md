@@ -342,7 +342,71 @@ PhantomReference<String> pr = new PhantomReference<String>(new String("hello"), 
 
 ![分区收集算法](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_12.png "分区收集算法")
 
+---
+
 ### 2.7 GC 垃圾收集器
+
+​		Java堆内存被划分为新生代和老年代两部分，新生代主要使用复制和Mark-Sweep算法；老年代主要使用Mark-Compact算法。因此Java虚拟机中针对新生代和老年代分别提供了多种不同的垃圾收集器，JDK1.8中 Sun Hotspot虚拟机的垃圾收集器如下：
+
+![JDK1.8 GC垃圾收集器](https://img-blog.csdn.net/20180813194627489?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTI5OTgyNTQ=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "JDK1.8 GC垃圾收集器")
+
+---
+
+#### 2.7.1 Serial 垃圾收集器(单线程、复制算法)
+
+​		Serial 是最基本的垃圾收集器，使用复制算法。它曾经是JDK1.3.1之前新生代唯一的垃圾收集器。Serial是一个单线程的收集器，并且在进行垃圾收集时，必须暂停所有工作线程，直到垃圾收集结束(**GC停顿**)。
+
+![Serial收集器运行示意图](https://img-blog.csdn.net/2018081320010740?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTI5OTgyNTQ=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "Serial收集器运行示意图")
+
+​		Serial垃圾收集器虽然在垃圾收集的过程中需要暂停所有其他的工作线程，但是它简单高效，对于限定单个CPU环境来说，Serial收集器没有线程交互开销，可以获得最高的单线程收集效率。在用户的桌面应用场景中，可用内存一般不大，可以在较短时间内完成垃圾收集(10ms ~ 200ms)，只要不频繁发生是可以接受的。
+
+​		所以Serial垃圾收集器依然是Hotspot在Client模式下默认的新生代垃圾收集器。
+
+---
+
+#### 2.7.2 ParNew 垃圾收集器(Serial + 多线程)
+
+​		ParNew垃圾收集器其实是Serial收集器的多线程版本，也是使用复制算法。除了使用多线程进行垃圾收集之外，其余的行为和Serial收集器完全一样，ParNew垃圾收集器在垃圾收集的过程中同样也需要暂停所有其他工作线程。
+
+​		ParNew收集器默认开启和CPU数目相同的线程数。
+
+​		参数控制：
+
+```java
+-XX:+UseConcMarkSweepGC:	//指定使用CMS后，会默认使用ParNew作为新生代收集器;
+-XX:+UseParNewGC:			//强制指定使用ParNew;
+-XX:ParallelGCThreads:		//指定垃圾收集的线程数量，ParNew默认开启的收集线程与CPU的数量相同;
+```
+
+![ParNew 垃圾收集器](https://img-blog.csdn.net/2018081320013053?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTI5OTgyNTQ=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "ParNew 垃圾收集器")
+
+​		<font color="003399">ParNew收集器是许多运行在server模式下的虚拟机中首选的新生代收集器</font>。一个重要原因是，只有ParNew和Serial收集器能和CMS收集器共同工作。无法与JDK1.4中存在的新生代收集器Parallel Scavenge配合工作，所以在JDK1.5中使用CMS来收集老年代的时候，新生代只能选择ParNew和Serial。
+
+---
+
+#### 2.7.3 Parallel Scavenge 收集器(多线程复制算法)
+
+​		Parallel Scavenge 收集器也是一个新生代垃圾收集器，同样使用复制算法，也是一个多线程垃圾收集器。它重点关注的是程序达到一个可控制的吞吐量(Throughout)：
+$$
+吞吐量(Throughout) = \frac{运行用户代码时间}{运行用户代码时间 + 垃圾收集时间}
+$$
+​		高吞吐量可以最高效率地利用CPU时间，尽快地完成程序的运算任务，主要适用于在后台运算而 不需要太多交互的任务。自适应调节策略也是Parallel Scavenge收集器和ParNew收集器一个重要的区别。
+
+​		参数控制：
+
+```java
+-XX:GCTimeRatio:			//控制吞吐量
+-XX:MaxGCPauseMillus:		//控制垃圾停顿时间
+-XX:UseAdaptiveSizePolicy:	//虚拟机会根据当前系统的运行情况收集性能监控信息，动态调整这些参数以提供最合适的停顿时间或者最大吞吐量(GC自使用的调节策略)。
+```
+
+---
+
+
+
+
+
+
 
 
 
