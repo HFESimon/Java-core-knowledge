@@ -21,7 +21,7 @@
 
 ---
 
-### 2.1 线程
+### 1.1 线程
 
 ​		这里所说的线程指程序执行过程中的一个线程实体。JVM允许一个应用并发执行多个线程。[Hotspot VM](https://www.cnblogs.com/baxianhua/p/9528192.html)中的Java线程与原生操作系统线程有直接的映射关系。<font color="#dd0000">当线程本地存储、缓冲区分配、同步对象、栈、程序计数器等准备好后，就会创建一个操作系统原生线程。Java线程结束，原生线程随之被回收。操作系统负责调度所有线程，并把它们分配到可用的CPU上。当原生线程初始化完毕，就会调用Java线程的run()方法。当线程结束时会释放原生线程和Java线程的所有资源。</font>
 
@@ -51,7 +51,7 @@
 </table>
 ---
 
-### 2.2 JVM内存区域
+### 1.2 JVM内存区域
 
 ​		JVM内存区域主要分为：线程私有区域(Thread Local)【程序计数器、虚拟机栈、本地方法区】、线程共享区(Thread Shared)【Java堆、方法区】、直接内存(Direct Memory)
 
@@ -67,7 +67,7 @@
 
 ---
 
-#### 2.2.1 程序计数器(线程私有 Thread Local)
+#### 1.2.1 程序计数器(线程私有 Thread Local)
 
 ​		一块较小的内存空间，<font color="#dd0000">是当前线程所执行的字节码行号指示器</font>，每条线程都要有一个独立的程序计数器，这类内存也成为“线程私有”内存。
 
@@ -77,7 +77,7 @@
 
 ---
 
-#### 2.2.2 虚拟机栈(线程私有 Thread Local)
+#### 1.2.2 虚拟机栈(线程私有 Thread Local)
 
 ​		<font color="#dd0000">是描述Java方法执行的内存模型，每个方法在执行的同时都会创建的一个栈帧(Stack Frame)用于存储局部变量表、操作数栈、动态链接、方法出口等信息。</font><font color="003399">每一个方法从调用直至执行完成的过程，就对应一个栈帧在虚拟机栈中从入栈到出栈的过程。</font>
 
@@ -87,19 +87,19 @@
 
 ---
 
-#### 2.2.3 本地方法栈(线程私有 Thread Local)
+#### 1.2.3 本地方法栈(线程私有 Thread Local)
 
 ​		本地方法栈和 Java Stack 作用类似, 区别是虚拟机栈为执行 Java 方法服务, 而本地方法栈则为 Native 方法服务, 如果一个 VM 实现使用 C-linkage 模型来支持 Native 调用, 那么该栈将会是一个 C 栈，但 Hotspot VM 直接就把本地方法栈和虚拟机栈合二为一。
 
 ---
 
-#### 2.2.4 堆(Heap-线程共享 Thread Share)-运行时数据区
+#### 1.2.4 堆(Heap-线程共享 Thread Share)-运行时数据区
 
 ​		是被线程共享的一块内存区域，<font color="003399">创建的对象和数组都保存在Java堆内存中，也是垃圾收集器进行垃圾收集的最重要的内存区域。</font>由于现代VM采用分代收集算法，因此Java堆从GC的角度还可以细分为：**新生代**(Eden区、From Survivor区和To Survivor区)和**老年代**。
 
 ---
 
-#### 2.2.5 方法区/永久代(线程共享 Thread Share)
+#### 1.2.5 方法区/永久代(线程共享 Thread Share)
 
 ​		方法区即我们常说的**永久代(Permanent Generation)**，用于存储**被JVM加载的类信息、常量、静态变量、即时编译器编译后的代码**等数据。Hotspot VM把GC分代收集扩展至方法区，即**使用Java堆的永久代来实现方法区**，这样Hotspot的垃圾收集器就可以像管理Java堆一样管理这部分内存，而不必为方法区开发专门的内存管理器(永久带的内存回收的主要目标是针对**常量池的回收**和**类型的卸载**，因此收益一般很小)。
 
@@ -107,7 +107,7 @@
 
 ---
 
-### 2.3 JVM运行时内存
+### 1.3 JVM运行时内存
 
 ​		Java堆从GC的角度还可以细分为：**新生代**(Eden区、From Survivor区和To Survivor区)和**老年代**。
 
@@ -115,31 +115,31 @@
 
 ---
 
-#### 2.3.1  新生代
+#### 1.3.1  新生代
 
 ​		是用来存放新生的对象。一般占据堆的1/3空间。由于频繁创建对象，所以新生代会频繁出发[Minor GC](https://www.cnblogs.com/williamjie/p/9516264.html)进行垃圾回收。[新生代](https://www.cnblogs.com/jswang/p/9056038.html)又分为：Eden区、From Survivor区、To Survivor三个区。
 
 ---
 
-##### 2.3.1.1 Eden 区
+##### 1.3.1.1 Eden 区
 
 ​		<font color="003399">Java新对象的出生地</font>(如果新创建的对象占用内存很大，则直接分配到老年代)。当Eden区内存不够的时候会触发Minor GC，对新生代区进行一次垃圾回收。
 
 ---
 
-##### 2.3.1.2 From Survivor 区
+##### 1.3.1.2 From Survivor 区
 
 ​		上一次GC的幸存者，作为这一次GC的被扫描者。
 
 ---
 
-##### 2.3.1.3 To Survivor 区
+##### 1.3.1.3 To Survivor 区
 
 ​		保留了一次Minor GC过程中的幸存者。
 
 ---
 
-##### 2.3.1.4 Minor GC 的过程
+##### 1.3.1.4 Minor GC 的过程
 
 ```java
 	复制——>清空——>互换
@@ -161,37 +161,37 @@
 
 ---
 
-#### 2.3.2 老年代
+#### 1.3.2 老年代
 
 ​		主要存放应用程序中生命周期长的内存对象。
 
-​		老年代的对象比较稳定，所以 Major GC 不会频繁执行。在进行Major GC前一般都先进行了一次Minor GC，使得有新生代对象晋身入老年代，导致老年代空间不够用时才触发。当无法找到足够大的连续空间分配给新创建的较大对象时也会出发一次Major GC 进行垃圾回收腾出空间。
+​		老年代的对象比较稳定，所以 Major GC (又称 Full GC) 不会频繁执行。在进行Major GC前一般都先进行了一次Minor GC，使得有新生代对象晋身入老年代，导致老年代空间不够用时才触发。当无法找到足够大的连续空间分配给新创建的较大对象时也会出发一次Major GC 进行垃圾回收腾出空间。
 
 ​		Major GC 采用<font color="003399">标记清除算法</font>：首先扫描一次所有老年代，标记出存活的对象，然后回收没有标记的对象。Major GC的耗时比较长，因为要扫描再回收。Major GC会产生内存碎片，为了减少内存消耗，我们一般需要进行合并或者标记出来方便下次直接分配。当老年代也满了装不下的时候就会抛出OOM(Out of Memory)异常。
 
 ---
 
-#### 2.3.3 永久代
+#### 1.3.3 永久代
 
 ​		指内存的永久保存区域，主要存放class和Meta(元数据)的信息，class在被加载的时候被放入永久区域，它和存放实例的区域不同，<font color="003399"> GC不会在主程序运行期对永久区域进行清理。</font>所以这也导致了永久代的区域会随着class的增多而空间不够，最终抛出OOM异常。
 
 ---
 
-##### 2.3.3.1 Java 8 与元数据
+##### 1.3.3.1 Java 8 与元数据
 
 ​		在Java 8中，<font color="003399">永久代已经被移除，被一个称为“元数据区”(元空间)的区域所取代。</font>元空间的本质和永久代类似，元空间与永久代最大的区别在于：<font color="003399">元空间并不在虚拟机中，而是使用本地内存。</font>因此，默认情况下，元空间的大小只受本地内存限制。<font color="003399">类的元数据放入 native memory，字符串池和类的静态变量放入Java堆中</font>，这样可以加载多少类的元数据就不再由[MaxPermSize](https://www.cnblogs.com/mingforyou/p/2378143.html)控制,而是由系统实际可用空间来控制。
 
 ---
 
-### 2.4 垃圾回收与算法
+### 1.4 垃圾回收与算法
 
 ![JVM垃圾回收与算法](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_7.png "JVM垃圾回收与算法")
 
 ---
 
-#### 2.4.1 如何确定垃圾
+#### 1.4.1 如何确定垃圾
 
-##### 2.4.1.1 引用计数法
+##### 1.4.1.1 引用计数法
 
 ​		在Java中，引用和对象是有关联的。如果要操作对象则必须用引用进行。因此可以通过引用计数来判断一个对象是否可以回收。简单说，即一个<font color="003399">对象如果没有任何与之关联的引用，即他们的引用计数都为0，则说明对象为垃圾对象，可被GC回收。</font>
 
@@ -218,7 +218,7 @@ class GcObject{
 
 ---
 
-##### 2.4.1.2 可达性分析
+##### 1.4.1.2 可达性分析
 
 ​		为了解决引用计数法的循环引用问题，Java使用了可达性分析的方法。通过一系列的“GC roots”对象作为起点搜索。<font color="003399">如果在“GC roots”和一个对象之间没有可达路径，则称该对象是不可达的。</font>要注意的是，不可达对象不等价于可回收对象，<font color="003399">不可达对象变为可回收对象至少要经过两次标记过程。</font>两次标记后仍然是不可达对象，则将面临回收。
 
@@ -228,7 +228,7 @@ class GcObject{
 
 ---
 
-#### 2.4.2 标记清除算法(Mark-Sweep)
+#### 1.4.2 标记清除算法(Mark-Sweep)
 
 ​		该算法是最基础的垃圾回收算法，其分为两个阶段，<font color="003399">标注和清除</font>。标记阶段标记出所有需要回收的对象，清除阶段回收被标记的对象所占用的空间。如图：
 
@@ -238,7 +238,7 @@ class GcObject{
 
 ---
 
-#### 2.4.3 复制算法(copying)
+#### 1.4.3 复制算法(copying)
 
 ​		该算法是为了解决Mark-Sweep算法内存碎片化的缺陷而被提出的算法。按内存容量将内存划分为等大小的两块。每次只使用其中的一块，当这一块内存满后将尚存货的对象复制到另一块上去，把已使用的内存清掉，如图：
 
@@ -248,7 +248,7 @@ class GcObject{
 
 ---
 
-#### 2.4.4 标记整理算法(Mark-Compact)
+#### 1.4.4 标记整理算法(Mark-Compact)
 
 ​		该算法结合了Mark-Sweep和copying两个算法，为了避免缺陷而提出。标记阶段和Mark-Sweep相同，<font color="003399">标记后不是清理对象，而是将存活对象移向内存的一端，然后清除存活边界外的对象</font>。如图：
 
@@ -256,13 +256,13 @@ class GcObject{
 
 ---
 
-#### 2.4.5 分代收集算法
+#### 1.4.5 分代收集算法
 
 ​		分代收集算法是目前大部分JVM所采用的方法，其核心思想是根据对象存活的不同生命周期将内存划分为不同的域，一般情况下将GC堆划分为老生代(Tenured/Old Generation)和新生代(Young Generation)。<font color="003399">老生代的特点是每次垃圾回收时只有少量对象需要被回收(老年代几乎都是Survivor熬过来的，不那么容易死掉，因此Major GC并不会很频繁)，新生代的特点是每次垃圾回收时都有大量垃圾需要被回收(Java对象大多是朝生夕死的特性，所以新生代的Minor GC会非常频繁)</font>。因此可以根据不同区域选择不同的算法。
 
 ---
 
-##### 2.4.5.1 新生代与复制算法
+##### 1.4.5.1 新生代与复制算法
 
 ​		目前大部分JVM的GC对于新生代都是使用copying算法，因为新生代中每次垃圾回收都要回收大量对象，需要复制的对象比较少。但通常不是按照1 : 1来划分新生代。一般将新生代划分为一块较大的Eden区和两个较小的Survivor区(From Space、To Space)，每次使用Eden区和其中的一块Survivor区，进行回收时将两块区域还存活的对象复制到另一个Survivor区中。
 
@@ -270,7 +270,7 @@ class GcObject{
 
 ---
 
-##### 2.4.5.2 老年代与标记整理算法
+##### 1.4.5.2 老年代与标记整理算法
 
 ​		反观老年代因为每次只回收少量的对象，使用Mark-Sweep算法会使内存碎片化严重。所以采用Mark-Compact算法
 
@@ -282,9 +282,9 @@ class GcObject{
 
 ---
 
-### 2.5 Java中的四种引用类型
+### 1.5 Java中的四种引用类型
 
-#### 2.5.1 强引用
+#### 1.5.1 强引用
 
 ​		在Java中最常见的就是强引用，如果一个对象具有强引用，它就不会被GC回收。即使当前<font color="#dd0000">内存空间不足</font>，JVM也不会回收它，而是抛出OOM错误(OutOfMemoryError)。因此强引用是造成内存泄露的主要原因之一。如果想中断强引用和某个对象之间的关联，可以显式地将引用赋值为null，这样一来，JVM在合适的时间就会回收该对象。
 
@@ -295,7 +295,7 @@ str = null;				//取消强引用
 
 ---
 
-#### 2.5.2 软引用
+#### 1.5.2 软引用
 
 ​		<font color="003399">软引用需要用 SoftReference 类来实现</font>，对于只有软引用的对象来说，当系统内存足够时它不会被回收，不足时会被回收。
 
@@ -305,7 +305,7 @@ SoftReference<String> sr = new SoftReference("hello");
 
 ---
 
-#### 2.5.3 弱引用
+#### 1.5.3 弱引用
 
 ​		弱引用需要用 WeakReference 类来实现，具有弱引用的对象拥有的生命周期更短暂。因为当 JVM 进行GC，一旦发现弱引用对象，无论当前内存空间是否充足，都会将弱引用回收。不过由于垃圾回收器是一个优先级较低的线程，所以并不一定能迅速发现弱引用对象。
 
@@ -315,7 +315,7 @@ WeakReference<String> wr = new WeakReference("hello");
 
 ---
 
-#### 2.5.4 虚引用
+#### 1.5.4 虚引用
 
 ​		虚引用顾名思义，就是形同虚设，如果一个对象仅有虚引用，那么它相当于没有引用，在任何时候都可能被GC回收。
 
@@ -328,15 +328,15 @@ PhantomReference<String> pr = new PhantomReference<String>(new String("hello"), 
 
 ---
 
-### 2.6 GC 分代收集算法 与 分区收集算法
+### 1.6 GC 分代收集算法 与 分区收集算法
 
-#### 2.6.1 分代收集算法
+#### 1.6.1 分代收集算法
 
 ​		详见 2.4.5 分代收集算法
 
 ---
 
-#### 2.6.2 分区收集算法
+#### 1.6.2 分区收集算法
 
 ​		<font color="003399">[分区收集算法](https://cloud.tencent.com/developer/article/1390547)将整个堆空间划分为连续的不同小区间，每个小区间独立使用</font>，独立回收。这样做的好处是可以控制一次回收多少个小区间，根据目标停顿时间，合理地回收若干个小区间(而不是整个堆)，从而可以减少一次GC所产生的停顿。
 
@@ -344,7 +344,7 @@ PhantomReference<String> pr = new PhantomReference<String>(new String("hello"), 
 
 ---
 
-### 2.7 GC 垃圾收集器
+### 1.7 GC 垃圾收集器
 
 ​		Java堆内存被划分为新生代和老年代两部分，新生代主要使用复制和Mark-Sweep算法；老年代主要使用Mark-Compact算法。因此Java虚拟机中针对新生代和老年代分别提供了多种不同的垃圾收集器，JDK1.8中 Sun Hotspot虚拟机的垃圾收集器如下：
 
@@ -352,7 +352,7 @@ PhantomReference<String> pr = new PhantomReference<String>(new String("hello"), 
 
 ---
 
-#### 2.7.1 Serial 垃圾收集器(单线程、复制算法)
+#### 1.7.1 Serial 垃圾收集器(单线程 复制算法)
 
 ​		Serial 是最基本的垃圾收集器，使用复制算法。它曾经是JDK1.3.1之前新生代唯一的垃圾收集器。Serial是一个单线程的收集器，并且在进行垃圾收集时，必须暂停所有工作线程，直到垃圾收集结束(**GC停顿**)。
 
@@ -364,7 +364,7 @@ PhantomReference<String> pr = new PhantomReference<String>(new String("hello"), 
 
 ---
 
-#### 2.7.2 ParNew 垃圾收集器(Serial + 多线程)
+#### 1.7.2 ParNew 垃圾收集器(Serial + 多线程)
 
 ​		ParNew垃圾收集器其实是Serial收集器的多线程版本，也是使用复制算法。除了使用多线程进行垃圾收集之外，其余的行为和Serial收集器完全一样，ParNew垃圾收集器在垃圾收集的过程中同样也需要暂停所有其他工作线程。
 
@@ -384,7 +384,7 @@ PhantomReference<String> pr = new PhantomReference<String>(new String("hello"), 
 
 ---
 
-#### 2.7.3 Parallel Scavenge 收集器(多线程复制算法)
+#### 1.7.3 Parallel Scavenge 收集器(多线程 复制算法)
 
 ​		Parallel Scavenge 收集器也是一个新生代垃圾收集器，同样使用复制算法，也是一个多线程垃圾收集器。它重点关注的是程序达到一个可控制的吞吐量(Throughout)：
 $$
@@ -402,7 +402,68 @@ $$
 
 ---
 
+#### 1.7.4 Serial Old 收集器(单线程 Mark-Compact算法)
 
+​		Serial Old 是 Serial 垃圾收集器地老年代版本，它与Serial一样是一个单线程收集器，使用标记-整理算法。<font color="003399">该收集器主要也是运行在Client模式下的Java虚拟机默认的老年代垃圾收集器</font>。如果在Server模式，则该收集器主要有两个用途：
+
+1. 在JDK1.5以及之前的版本中与新生代的Parallel Scavenge收集器搭配使用。
+2. 作为老年代中使用CMS收集器的后备垃圾收集方案。在并发收集发生 Concurrent Mode Failure时使用。工作流程图如下：
+
+![Serial/Serial Old搭配垃圾收集过程图](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_13.png "Serial/Serial Old搭配垃圾收集过程图")
+
+​		新生代 Parallel Scavenge 收集器与 ParNew收集器工作原理类似，都是多线程的收集器，都使用的是复制算法，在垃圾收集的过程中都需要暂停所有的工作线程。新生代 Parallel Scavenge/ParNew 与老年代 Serial Old 垃圾收集过程如图：
+
+![Parallel Scavenge/ParNew 配合 Serial Old垃圾收集过程图](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_14.png "Parallel Scavenge/ParNew 配合 Serial Old垃圾收集过程图")
+
+---
+
+#### 1.7.5 Parallel Old 收集器(多线程 Mark-Compact算法)
+
+​		Parallel Old 收集器是 Parallel Scavenge 的老年代版本，使用多线程的标记-整理算法，在JDK1.6之后才提供。
+
+​		在此之前Parallel Scavenge 只有 Serial Old可供选择，只能保证新生代的吞吐量优先，无法保证整体的吞吐量，所以就诞生了此收集器。至此吞吐量优先收集器就有了比较名副其实的应用组合，在注重吞吐量以及CPU资源敏感的场合，都可以优先考虑Parallel Scavenge收集器加上Parallel Old收集器。
+
+![Parallel Scavenge/Parallel Old 收集器](https://img-blog.csdnimg.cn/20200411222246385.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1NpbW9uXzA5MDEwODE3,size_16,color_FFFFFF,t_70 "Parallel Scavenge/Parallel Old 收集器")
+
+---
+
+#### 1.7.6 CMS 收集器(多线程 Mark-Sweep算法)
+
+​		Concurrent Mark Sweep(CMS)收集器是一种老年代垃圾收集器，其最主要的目标是<font color ="003399">获取最短垃圾回收时间</font>，与Parallel Old 使用的 Mark-Compact 算法不同，它使用多线程 Mark- Sweep 算法。目前很大一部分Java应用集中在互联网站或者B/S结构的服务端上，这类应用尤其重视服务的响应速度，希望系统停顿更短。
+
+​		CMS 的工作机制相比其他垃圾收集器来说更复杂，整个过程分为以下4个阶段：
+
+##### 1.7.6.1 初始标记(CMS initial mark)
+
+​		只是标记一下GC roots能直接关联的对象，速度很快，但是仍然需要暂停所有的工作线程。
+
+##### 1.7.6.2 并发标记(CMS concurrent mark)
+
+​		进行GC roots Tracing 可达性分析过程。在整个过程中耗时最长。
+
+##### 1.7.6.3 重新标记(CMS remark)
+
+​		为了修正并发标记期间因用户程序继续运作而导致标记产生变动的那一部分对象的标记记录，这一阶段的停顿时间比初始标记稍长，但远比并发标记时间短，仍然需要暂停所有工作进程。
+
+##### 1.7.6.4 并发清除(CMS concurrent sweep)
+
+​		清除 GC roots 不可达对象，和用户线程一起工作，不需要暂停工作线程。由于耗时最长的并发标记和并发清除过程中，GC线程可以和用户线程一起并发工作，<font color="#dd000">所以总体上看CMS收集器的内存回收和用户线程是一起并发地执行</font>。
+
+![CMS 收集器](https://img-blog.csdnimg.cn/20200411225638222.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1NpbW9uXzA5MDEwODE3,size_16,color_FFFFFF,t_70 "CMS 收集器")
+
+​		**谈谈CMS收集器地优缺点**：
+
+​		优点：
+
+​		<font color="#dd000">并发收集、低停顿</font>。因此也被称为并发低停顿收集器(Concurrent Low Pause Collector)。
+
+​		缺点：
+
+- <font color="#dd000">**对CPU资源非常敏感**</font>。在并发阶段，它虽然不会导致用户线程停顿，但因为占用了一部分线程而导致应用程序变慢，总吞吐量会降低。<font color="#dd000">CMS默认启动地回收线程数为(CPU数 + 3) / 4</font>，当CPU在4个以上时，并发回收时垃圾收集线程不少于25%的CPU资源，但是当CPU不足4个时，CMS对用户程序的影响可能变得很大。
+- <font color="#dd000">**无法处理浮动垃圾(Floating Garbage)，可能出现Concurrent Mode Failure失败导致另一次Full GC产生**</font>。由于CMS并发清理阶段用户线程还在运行，伴随程序运行自然就还会有新的垃圾不断产生。<font color="#dd000">这部分垃圾出现在标记过程之后，CMS无法在当次收集中处理掉它们，只好留待下一次GC时再清理，这一部分垃圾称为浮动垃圾。</font>由于垃圾收集阶段用户线程还需要运行，就需要预留足够的内存空间给用户线程使用，在JDK1.5默认设置下CMS收集器当老年代使用了68%的空间后就被激活，如果应用的老年代内存增长不是太快可以通过-XX:CMSInitiatingOccupancyFraction的值来提高触发百分比，以便降低内存回收次数从而获取更好的性能，在JDK1.6中，<font color="#dd000">CMS收集器的启动阈值已经提升至92%。要是CMS运行期间预留的内存无法满足程序需要，就会出现一次“Concurrent Mode Failure”失败，这时虚拟机将启动后备预案：临时启用Serial Old收集器来重新进行老年代的垃圾收集，这样停顿时间就很长了</font>。
+- <font color="#dd000">**Mark-Sweep算法地通病：导致内存碎片化严重**</font>。空间碎片过多往往会出现老年代还有很大空间，但是无法找到足够大的连续空间分配大对象。不得不提前触发一次Full GC。CMS提供-XX：+UseCMSCompactAtFullCollection开关参数（默认开启），用于CMS收集器顶不住要进行Full GC时开启内存碎片的合并整理，但是过程无法并发，停顿时间不得不变长。
+
+#### 1.7.7 G1 收集器
 
 
 
