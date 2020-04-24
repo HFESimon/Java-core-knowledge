@@ -332,7 +332,7 @@ PhantomReference<String> pr = new PhantomReference<String>(new String("hello"), 
 
 #### 1.6.1 分代收集算法
 
-​		详见 2.4.5 分代收集算法
+​		详见 1.4.5 分代收集算法
 
 ---
 
@@ -451,7 +451,7 @@ $$
 
 ![CMS 收集器](https://img-blog.csdnimg.cn/20200411225638222.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1NpbW9uXzA5MDEwODE3,size_16,color_FFFFFF,t_70 "CMS 收集器")
 
-​		**谈谈CMS收集器地优缺点**：
+​		**谈谈CMS收集器的优缺点**：
 
 ​		优点：
 
@@ -461,27 +461,66 @@ $$
 
 - <font color="#dd000">**对CPU资源非常敏感**</font>。在并发阶段，它虽然不会导致用户线程停顿，但因为占用了一部分线程而导致应用程序变慢，总吞吐量会降低。<font color="#dd000">CMS默认启动地回收线程数为(CPU数 + 3) / 4</font>，当CPU在4个以上时，并发回收时垃圾收集线程不少于25%的CPU资源，但是当CPU不足4个时，CMS对用户程序的影响可能变得很大。
 - <font color="#dd000">**无法处理浮动垃圾(Floating Garbage)，可能出现Concurrent Mode Failure失败导致另一次Full GC产生**</font>。由于CMS并发清理阶段用户线程还在运行，伴随程序运行自然就还会有新的垃圾不断产生。<font color="#dd000">这部分垃圾出现在标记过程之后，CMS无法在当次收集中处理掉它们，只好留待下一次GC时再清理，这一部分垃圾称为浮动垃圾。</font>由于垃圾收集阶段用户线程还需要运行，就需要预留足够的内存空间给用户线程使用，在JDK1.5默认设置下CMS收集器当老年代使用了68%的空间后就被激活，如果应用的老年代内存增长不是太快可以通过-XX:CMSInitiatingOccupancyFraction的值来提高触发百分比，以便降低内存回收次数从而获取更好的性能，在JDK1.6中，<font color="#dd000">CMS收集器的启动阈值已经提升至92%。要是CMS运行期间预留的内存无法满足程序需要，就会出现一次“Concurrent Mode Failure”失败，这时虚拟机将启动后备预案：临时启用Serial Old收集器来重新进行老年代的垃圾收集，这样停顿时间就很长了</font>。
-- <font color="#dd000">**Mark-Sweep算法地通病：导致内存碎片化严重**</font>。空间碎片过多往往会出现老年代还有很大空间，但是无法找到足够大的连续空间分配大对象。不得不提前触发一次Full GC。CMS提供-XX：+UseCMSCompactAtFullCollection开关参数（默认开启），用于CMS收集器顶不住要进行Full GC时开启内存碎片的合并整理，但是过程无法并发，停顿时间不得不变长。
+- <font color="#dd000">**Mark-Sweep算法的通病：导致内存碎片化严重**</font>。空间碎片过多往往会出现老年代还有很大空间，但是无法找到足够大的连续空间分配大对象。不得不提前触发一次Full GC。CMS提供-XX：+UseCMSCompactAtFullCollection开关参数（默认开启），用于CMS收集器顶不住要进行Full GC时开启内存碎片的合并整理，但是过程无法并发，停顿时间不得不变长。
 
 ---
 
 #### 1.7.7 G1 收集器
 
+​		G1(Garbage-First) 收集器是目前收集器技术发展最前沿的成果之一。它是一款<font color="#dd000">面向服务端应用的垃圾收集器</font>。使用G1收集器时，Java堆内存布局就与其他收集器有很大差别，它将整个Java堆划分为多个大小相等的独立区域(Region)，虽然还保留新生代和老年代的概念，但新生代和老年代不再是物理隔离了，而都是一部分Region(不需要连续)的集合。在G1中，堆被划分成 许多个连续的区域(region)。每个区域大小相等，在1M~32M之间。JVM最多支持2000个区域，可推算G1能支持的最大内存为2000*32M=62.5G。区域(region)的大小在JVM初始化的时候决定，也可以用-XX:G1HeapReginSize设置。
 
+![G1收集器对内存的划分](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_15.png "G1收集器对内存的划分")
 
+​		每块区域既有可能是Old区，也有可能是Young区，因此不需要一次就对整个老年代/新生代回收。而是<font color="003399">而是当线程并发寻找可回收对象时，有些区块包含可回收的对象比其他区块多很多虽然在清理这些区块时G1仍然需要暂停应用线程, 但可以用相对较少的时间优先回收垃圾较多的Region(这也是G1命名的来源)。</font>这种方式保证了G1可以在有限的时间内获取尽可能高的收集效率。G1具备如下特点：
 
+- 并行与并发：G1能充分利用多CPU、多线程环境下的硬件优势，使用多个CPU(或核心)来缩短stop-the-world(暂停所有工作线程线程)停顿时间。G1收集器仍然可以通过并发的方式让Java程序继续执行。
+- 分代收集：虽然G1可以不需要其他收集器配合就能独立管理整个GC堆，但是还是保留了粉黛的概念。它能采用不同方式去处理新创建的对象和已经存活了一段时间的对象，以获取更好的收集效果。
+- 空间整合：与CMS的 Mark-Compact 算法不同，<font color="#dd000">G1从整体来看是基于Mark-Compact算法实现的收集器，从局部(两个Region之间)看是基于Copying算法实现的</font>，这两种算法都意味着G1运行期间不会产生内存空间碎片，收集后能提供规整的可用内存。这个特性有利于程序长时间运行，分配大对象时不会因为无法找到连续内存空间而提前出发下一次GC。
+- 可预测的停顿：G1建立可预测的停顿时间模型，能让使用者指明在一个长度为M ms的时间片段内，消耗在垃圾收集上的时间不超过 N ms。
 
+##### 1.7.7.1 新生代收集
 
+​		G1的新生代收集和ParNew类似，存活的对象被转移到一个或多个 Survivor Regions。如果存活时间达到阈值，这部分对象就会被提升到老年代。
 
+<img src="http://www.sico-technology.cn:81/images/java_note/jvm/jvm_16.png" alt="G1新生代收集" align="left" style="zoom: 65%"><img src="http://www.sico-technology.cn:81/images/java_note/jvm/jvm_17.png" alt="G1新生代收集" align="" style="zoom: 53%">
 
+​		G1的新生代收集特点如下：
 
+- 一整块堆内存被分为多个Regions
+- 存活对象被拷贝到Survivor区或老年代
+- 年轻代内存由一组不连续的heap区组成，这种方法使得可以动态调整各代区域尺寸
+- Young GC会有 stop-the-world事件
+- 多线程并发GC
 
+##### 1.7.7.2 老年代收集
 
+​		G1老年代收集会执行以下阶段：
 
+>注：以下有些阶段也是年轻代垃圾收集的一部分
 
+| num  | Phase                                                 | Description                                                  |
+| :--: | :---------------------------------------------------- | ------------------------------------------------------------ |
+|  1   | 初始标记 (Initial Mark: Stop the World Event)         | 在G1中, 该操作附着一次年轻代GC, 以标记Survivor中有可能引用到老年代对象的Regions. |
+|  2   | 扫描根区域 (Root Region Scanning: 与应用程序并发执行) | 扫描Survivor中能够引用到老年代的references. 但必须在Minor GC触发前执行完. |
+|  3   | 并发标记 (Concurrent Marking : 与应用程序并发执行)    | 在整个堆中查找存活对象, 但该阶段可能会被Minor GC中断.        |
+|  4   | 重新标记 (Remark : Stop the World Event)              | 完成堆内存中存活对象的标记. 使用snapshot-at-the-beginning(SATB, 起始快照)算法, 比CMS所用算法要快得多(空Region直接被移除并回收, 并计算所有区域的活跃度). |
+|  5   | 清理 (Cleanup : Stop the World Event and Concurrent)  | 见下 5-1、2、3                                               |
+| 5-1  | (Stop the world)                                      | 在含有存活对象和完全空闲的区域上进行统计                     |
+| 5-2  | (Stop the world)                                      | 擦除Remembered Sets.                                         |
+| 5-3  | (Concurrent)                                          | 重置空regions并将他们返还给空闲列表(free list)               |
+| (*)  | Copying/Cleanup (Stop the World Event)                | 选择”活跃度”最低的区域(这些区域可以最快的完成回收). 拷贝/转移存活的对象到新的尚未使用的regions. 该阶段会被记录在gc-log内(只发生年轻代[GC pause (young)], 与老年代一起执行则被记录为[GC Pause (mixed)]. |
 
+​		G1老年代收集特点如下：
 
+- 并发标记阶段(num 3)：在与应用程序并发执行的过程中会计算活跃度信息。这些活跃度信息标识出哪些Regions适合在stop-the-world期间回收。
+- 再次标记阶段(num 4) ：使用Snapshot-at-the-Beginning(SATB)算法比CMS快得多。空Region直接被回收。
+- 拷贝清理阶段(Copying/Cleanup - Phase)：年轻代与老年代同时回收。老年代内存回收会基于它的活跃度信息。
 
+##### 1.7.7.3 SATB算法(snapshot-at-the-beginning)
 
+​		<font color="#dd000">先空着。QwQ</font>
 
+##### 1.7.7.4 G1 收集器总结
+
+​		上面几个步骤的运作过程和CMS有很多相似之处。初始标记阶段仅仅只是标记一下GC Roots能直接关联到的对象，并且修改TAMS的值，让下一个阶段用户程序并发运行时，能在正确可用的Region中创建新对象，这一阶段需要停顿线程，但是耗时很短，并发标记阶段是从GC Root开始对堆中对象进行可达性分析，找出存活的对象，这阶段时耗时较长，但可与用户程序并发执行。而最终标记阶段则是为了修正在并发标记期间因用户程序继续运作而导致标记产生变动的那一部分标记记录，虚拟机将这段时间对象变化记录在线程Remembered Set Logs里面，最终标记阶段需要把Remembered Set Logs的数据合并到Remembered Set Logs里面，最终标记阶段需要把Remembered Set Logs的数据合并到Remembered Set中，这一阶段需要停顿线程，但是可并行执行。最后在筛选回收阶段首先对各个Region的回收价值和成本进行排序，根据用户所期望的GC停顿时间来制定回收计划。
 
