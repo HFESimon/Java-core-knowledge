@@ -516,11 +516,64 @@ $$
 - 再次标记阶段(num 4) ：使用Snapshot-at-the-Beginning(SATB)算法比CMS快得多。空Region直接被回收。
 - 拷贝清理阶段(Copying/Cleanup - Phase)：年轻代与老年代同时回收。老年代内存回收会基于它的活跃度信息。
 
-##### 1.7.7.3 SATB算法(snapshot-at-the-beginning)
+##### 1.7.7.3 G1 SATB 和 CMS Incremental Update算法的理解
 
-​		<font color="#dd000">先空着。QwQ</font>
+###### 1.7.7.3.1 什么是着色标记
+
+​		CMS GC 和 G1 GC算法都是通过对GC roots进行遍历，并进行三颜色标记，具体标记算法如下：
+
+- 黑色(black)：节点被遍历完成，而且子节点都遍历完成
+- 灰色(gray)：当前正在遍历的节点，而且子节点还没有遍历
+- 白色(white)：还没有遍历到的节点，即灰色节点的子节点
+
+###### 1.7.7.3.2 并行GC面对的共同问题
+
+​		CMS GC 和 G1 GC 都有并行执行的阶段。既然有并行，那就有可能在GC过程中标记过的对象引用关系发生改变，比如一个white节点的引用由gray变为black，那么该white节点变为black节点的子节点，因此而被漏掉，导致被错误回收。
+
+​		这就是为什么 CMS 和 G1 都有Remark阶段，都需要对被修改的card重新扫描。
+
+​		那CMS GC和G1 GC各自是如何解决这个问题的呢？这里就要了解CMS Incremental Update 算法和 G1 SATB算法了。
+
+​		我们先描述一下问题场景，并行 GC 在什么情况下会出现漏掉活的对象，根据三色扫描算法，如果有下面两种情况发生，则会出现漏扫描的场景：
+
+1. 把一个white对象的引用存到black对象的字段里，如果这个情况发生，因为标记为black的对象认为是扫描完成的，不会再对它进行扫描
+2. 某个白对象失去了所有能从灰对象到达它的引用路径(直接或间接)
+
+如图：
+
+![GC roots](https://upload-images.jianshu.io/upload_images/5419521-bf917d0ad34173ce.png?imageMogr2/auto-orient/strip|imageView2/2/w/826/format/webp "GC roots")
+
+​		如上图对象D，引用存到了black对象A上，同时切断了gray对象B对其的引用，导致对象D被漏扫描了。解决这个问题可以从两个角度入手，指向D的这个引用从源B到目的地址A，所以分别从源和目标的角度来解决就提出了两种算法：
+
+​		**SATB(Snapshot-at-beginning)**：SATB算法认为初始标记的都认为是活的对象，引用B到D改为B到C时，通过<font color="003399">write barrier写屏蔽技术</font>，会把B到D的引用推到GC遍历的执行堆栈上，保证还可以遍历到D对象，相对于D来说引用从B到A，SATB是从引用源入手解决的。SATB即认为初始时所有能遍历到的对象都是需要标记的如果把B = null，那么D就变成垃圾了，SATB算法却依然把D标为black，导致D在本轮Gc不能被回收，变成浮动垃圾。
+
+​		**Incremental Update**： Incremental Update算法判断如果一个white对象由一个black对象引用，即white对象是一个black对象的目的，如上图B的目的D变为A的目的，发现这种情况时，也是通过write barrier写屏蔽技术，把黑色的对象重新标记为灰色，让collector 重新来扫描，活着通过mod-union table 来标记。
+
+> mod-union table：https://www.jianshu.com/p/7be320306ed1
+
+###### 1.7.7.3.3 Incremental Update 和 SATB 的区别
+
+​		通过上面的分析，我们知道SATB write barrier 是认为开始标记那一刻认为都是活的，所以有可能有些已经是垃圾的对象就会也被扫描，导致 SATB相对  Incremental Update  会更多的开销，G1 GC 扫描的都是选定的固定个数的Region，所以这个开销应该可控，但是而且浮动垃圾也更多。(参考:[网页链接](https://www.jianshu.com/p/8d37a07277e0))
 
 ##### 1.7.7.4 G1 收集器总结
 
 ​		上面几个步骤的运作过程和CMS有很多相似之处。初始标记阶段仅仅只是标记一下GC Roots能直接关联到的对象，并且修改TAMS的值，让下一个阶段用户程序并发运行时，能在正确可用的Region中创建新对象，这一阶段需要停顿线程，但是耗时很短，并发标记阶段是从GC Root开始对堆中对象进行可达性分析，找出存活的对象，这阶段时耗时较长，但可与用户程序并发执行。而最终标记阶段则是为了修正在并发标记期间因用户程序继续运作而导致标记产生变动的那一部分标记记录，虚拟机将这段时间对象变化记录在线程Remembered Set Logs里面，最终标记阶段需要把Remembered Set Logs的数据合并到Remembered Set Logs里面，最终标记阶段需要把Remembered Set Logs的数据合并到Remembered Set中，这一阶段需要停顿线程，但是可并行执行。最后在筛选回收阶段首先对各个Region的回收价值和成本进行排序，根据用户所期望的GC停顿时间来制定回收计划。
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
