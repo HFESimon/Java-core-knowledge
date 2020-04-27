@@ -545,7 +545,7 @@ $$
 
 ​		如上图对象D，引用存到了black对象A上，同时切断了gray对象B对其的引用，导致对象D被漏扫描了。解决这个问题可以从两个角度入手，指向D的这个引用从源B到目的地址A，所以分别从源和目标的角度来解决就提出了两种算法：
 
-​		**SATB(Snapshot-at-beginning)**：SATB算法认为初始标记的都认为是活的对象，引用B到D改为B到C时，通过<font color="003399">write barrier写屏蔽技术</font>，会把B到D的引用推到GC遍历的执行堆栈上，保证还可以遍历到D对象，相对于D来说引用从B到A，SATB是从引用源入手解决的。SATB即认为初始时所有能遍历到的对象都是需要标记的如果把B = null，那么D就变成垃圾了，SATB算法却依然把D标为black，导致D在本轮Gc不能被回收，变成浮动垃圾。
+​		**SATB(Snapshot-at-beginning)**：SATB算法认为初始标记的都认为是活的对象，引用B到D改为B到C时，通过<font color="003399">write barrier写屏蔽技术</font>，会把B到D的引用推到GC遍历的执行堆栈上，保证还可以遍历到D对象，相对于D来说引用从B到A，SATB是从引用源入手解决的。SATB即认为初始时所有能遍历到的对象都是需要标记的如果把B = null，那么D就变成垃圾了，SATB算法却依然把D标为black，导致D在本轮GC不能被回收，变成浮动垃圾。
 
 ​		**Incremental Update**： Incremental Update算法判断如果一个white对象由一个black对象引用，即white对象是一个black对象的目的，如上图B的目的D变为A的目的，发现这种情况时，也是通过write barrier写屏蔽技术，把黑色的对象重新标记为灰色，让collector 重新来扫描，活着通过mod-union table 来标记。
 
@@ -561,7 +561,15 @@ $$
 
 ---
 
+### 1.8 Java IO/NIO
 
+ #### 1.8.1 IO Model
+
+- Blocking IO - 阻塞 IO 模型
+- Non-Blocking IO -  非阻塞 IO 模型
+- IO multiplexing - 多路复用 IO 模型
+- Signal driven IO - 信号驱动 IO 模型
+- Asynchronous IO - 异步 IO 模型
 
 
 
