@@ -571,6 +571,44 @@ $$
 - Signal driven IO - 信号驱动 IO 模型
 - Asynchronous IO - 异步 IO 模型
 
+##### 1.8.1.1 Blocking IO
+
+​		Blocking IO 是我们在一开始学习Java都使用过的BIO编程方式，在JDK1.4之前，NIO没有出， Java IO 编程只有这一个方式。一个典型的读操作流程如下：
+
+![Blocking IO](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_18.png "Blocking IO")
+
+1. 程序调用<font color="#dd000">`socket.read()`</font>，这个方法会调用<font color="#dd000">`socket.read()`</font>方法，所以最终是由OS(Operating System)执行read
+2. OS得到read指令，命令网卡读取数据
+3. 网卡读取数据完成后，将数据传递给内核
+4. 内核把读取的数据拷贝到用户空间
+5. 程序解除阻塞，完成read函数
+
+> 1. <font color="#dd000">`socket.read()`</font>会调用<font color="#dd000">`socket.read()`</font>,而Java中的native方法会调用底层的dll，而dll是C/C++编写的，图中的<font color="#dd000">`recvfrom`</font>其实是C语言socket编程中的一个方法。所以其实我们在Java中调用<font color="#dd000">`socket.read()`</font>最后也会调用到图中的<font color="#dd000">`recvfrom`</font>方法。
+> 2. 应用程序想要读取数据就会调用<font color="#dd000">`recvfrom`</font>，而<font color="#dd000">`recvfrom`</font>会通知OS来执行，OS就会判断**数据包是否准备好**(比如判断是否收到了一个完整的UDP报文，如果收到UDP报文不完整，那么就继续等待)。当数据包准备好了之后，OS就会**将数据从内核空间拷贝到用户空间**(因为我们的用户程序只能获取用户空间的内存，无法直接获取内核空间的内存)。拷贝完成之后<font color="#dd000">`socket.read()`</font>就会解除阻塞，并得到read的结果。
+
+​		在Blocking IO 中我们称作的阻塞也就是阻塞在两个地方：1. OS等待数据报准备好。2. 将数据从内核空间拷贝到用户空间。
+
+##### 1.8.1.2 Non-Blocking IO
+
+​		当我们new了一个socket后我们可以设置其为非阻塞的。例如：
+
+```java
+// 初始化一个 serverSocketChannel
+serverSocketChannel = ServerSocketChannel.open();
+serverSocketChannel.bind(new InetSocketAddress(8000));
+// 设置serverSocketChannel为非阻塞模式
+// 即 accept()会立即得到返回
+serverSocketChannel.configureBlocking(false);
+```
+
+> ```java
+> ServerSocketChannel
+> SocketChannel
+> FileChannel
+> DatagramChannel
+> //只有FlieChannel无法设置成非阻塞模式，其他Channel都可以设置为非阻塞模式
+> ```
+
 
 
 
