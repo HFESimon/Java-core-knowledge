@@ -609,13 +609,76 @@ serverSocketChannel.configureBlocking(false);
 > //只有FlieChannel无法设置成非阻塞模式，其他Channel都可以设置为非阻塞模式
 > ```
 
+​		当对一个non-blocking socket执行读操作时，流程如图：
 
+![Non-Blocking IO](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_19.png "Non-Blocking IO")
 
+​		从图中可以看出，当socket设置为非阻塞后，<font color="#dd000">`socket.read()`</font>会立即得到一个返回结果(success or failed)。我们可以在失败时做一些其他事情，但事实上这种方式也是低效的，因为不得不使用轮询方法去一直问OS："我的数据报好了没啊？"。
 
+​		Non-Blocking IO 不会在<font color="#dd000">`recvfrom`</font>也就是<font color="#dd000">`socket.read()`</font>的时候阻塞，但是还是会在<font color="#dd000">**将数据从内核空间拷贝到用户空间**</font>阻塞，Non-Blocking IO还是会阻塞的。
 
+##### 1.8.1.3 IO Multiplexing
 
+​		IO multiplexing 即 IO多路复用，传统情况下client与server通信需要3个socket(client的socket、server监听client连接的serversocket，还有一个server与client通信的socket)，而在 IO多路复用中，client与server通信需要的不是socket，而是3个channel。通过channel可以完成与socket一样的操作，channel的底层还是使用的socket进行通信，但是多个channel只对应一个socket(可能不只是一个，但是socket的数量一定少于channel数量)，这样仅仅通过少量的socket就可以完成更多的连接，提高了client容量。
 
+![IO multiplexing](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_20.png "IO multiplexing")
 
+​		不同操作系统有不同的实现：
+
+- Widows: selector
+
+- Linux: epoll
+
+- Mac: kqueue
+
+  ​	其中epoll，kqueue比selector更为高效，这是因为他们监听方式的不同。selector的监听是通过轮询FD_SETSIZE来问每一个`socket`：“你改变了吗？”，假若监听到时间，那么selector就会调用相应的时间处理器进行处理。但是epoll与kqueue不同，他们把socket与事件绑定在一起，当监听到socket变化时，立即可以调用相应的处理。
+
+  ​	selector，epoll，kqueue都属于Reactor IO设计。关于 Reactor与Proactor，可以看：[IO 模式 Reactor与Proactor](https://www.jianshu.com/p/46956e779ad4)
+
+##### 1.8.1.4 Signal driven IO
+
+​		Signal driven IO 是指：当一个进程执行IO操作时，内核马上返回，进程继续运行。当刚才指定的IO操作完成后（或出错），通过信号通知进程。
+
+![Signal driven IO](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_21.png "Signal driven IO")
+
+​		Signal-Driven IO for Sockets分为三个步骤：
+
+1. 为SIGIO建立 signal handler
+2. 必须设定socket owner，一般使用fcntl设置F_SETOWN
+3. 设置socket允许Signal-driven IO，通过fcntl设置F_SETFL，用来开启O_ASYNC flag(也可用FIOASYNC ioctl进行设置)
+
+​		SIGIO with UDP Sockets： 1. datagram到达。2. asynchronous error产生。当捕获消息后，可调用<font color="#dd000">`recvfrom`</font>读取数据或error。
+
+​		Signal driven IO对TCP没什么用，因为产生的太过频繁，而且不能告诉我们发生了什么。
+
+##### 1.8.1.5 Asynchronous IO
+
+​		Asynchronous IO 异步IO流程如图：
+
+![Asynchronous IO](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_22.png "Asynchronous IO")
+
+​		Asynchronous IO调用中是真正的无阻塞，其他IO model中多少会有点阻塞。程序发起read操作之后，立刻就可以开始去做其它的事。而在内核角度，当它受到一个asynchronous read之后，首先它会立刻返回，所以不会对用户进程产生任何block。然后，kernel会等待数据准备完成，然后将数据拷贝到用户内存，当这一切都完成之后，kernel会给用户进程发送一个signal，告诉它read操作完成了。
+
+##### 1.8.1.6 各种IO对比
+
+	1. Blocking IO 与Non-Blocking IO 区别？
+	
+	阻塞或非阻塞只涉及程序和OS，Blocking IO 会一直block程序知道OS返回，而Non-Block IO在OS内核在准备数据包的情况下会立即得到返回。
+	
+	2. Asynchronous IO 与 Synchronous IO？
+	
+	只要有block(阻塞)就是同步IO，完全没有block则是异步IO。所以我们之前所说的 Blocking IO、Non-Blocking IO、IO Multiplexing 都是 Synchronous IO
+
+![IO 对比](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_23.png "IO 对比")
+
+​		有A，B，C，D四个人在钓鱼：
+
+1. A用的是最老式的鱼竿，所以呢，得一直守着，等到鱼上钩了再拉杆；
+2. B的鱼竿有个功能，能够显示是否有鱼上钩，所以呢，B就和旁边的MM聊天，隔会再看看有没有鱼上钩，有的话就迅速拉杆；
+3. C用的鱼竿和B差不多，但他想了一个好办法，就是同时放好几根鱼竿，然后守在旁边，一旦有显示说鱼上钩了，它就将对应的鱼竿拉起来；
+4. D是个有钱人，干脆雇了一个人帮他钓鱼，一旦那个人把鱼钓上来了，就给D发个短信。
+
+​		参考博客：[IO - 同步，异步，阻塞，非阻塞 ](https://links.jianshu.com/go?to=https%3A%2F%2Fblog.csdn.net%2Fhistoryasamirror%2Farticle%2Fdetails%2F5778378)
 
 
 
