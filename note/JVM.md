@@ -561,7 +561,7 @@ $$
 
 ---
 
-### 1.8 Java IO/NIO
+### 1.8 Java IO/NIO/AIO
 
  #### 1.8.1 IO Model
 
@@ -661,11 +661,11 @@ serverSocketChannel.configureBlocking(false);
 
 ##### 1.8.1.6 各种IO对比
 
-	1. Blocking IO 与Non-Blocking IO 区别？
+	1. Blocking IO 与 Non-Blocking IO 区别 ?
 	
 	阻塞或非阻塞只涉及程序和OS，Blocking IO 会一直block程序知道OS返回，而Non-Block IO在OS内核在准备数据包的情况下会立即得到返回。
 	
-	2. Asynchronous IO 与 Synchronous IO？
+	2. Asynchronous IO 与 Synchronous IO ?
 	
 	只要有block(阻塞)就是同步IO，完全没有block则是异步IO。所以我们之前所说的 Blocking IO、Non-Blocking IO、IO Multiplexing 都是 Synchronous IO
 
@@ -680,7 +680,7 @@ serverSocketChannel.configureBlocking(false);
 
 ​		参考博客：[IO - 同步，异步，阻塞，非阻塞 ](https://links.jianshu.com/go?to=https%3A%2F%2Fblog.csdn.net%2Fhistoryasamirror%2Farticle%2Fdetails%2F5778378)
 
-
+#### 1.8.2 Java IO
 
 
 
