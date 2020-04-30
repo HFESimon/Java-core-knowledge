@@ -682,6 +682,37 @@ serverSocketChannel.configureBlocking(false);
 
 #### 1.8.2 Java IO
 
+##### 1.8.2.1 IO的概念和作用
+
+​		Java IO 也称为IO流，IO = 流，它的核心就是对文件的操作，对于字节 、字符类型的输入和输出流。IO是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据
+
+​		Java IO流操作有关的类或接口：
+
+| 类               | 说明           |
+| ---------------- | -------------- |
+| File             | 文件类         |
+| RandomAccessFile | 随机读取文件类 |
+| InputStream      | 字节输入流     |
+| OutputStream     | 字节输出流     |
+| Reader           | 字符输入流     |
+| Writer           | 字符输出流     |
+
+​		Java IO类图结构：
+
+![Java IO类图结构](https://pic002.cnblogs.com/images/2012/384764/2012031413373126.jpg "Java IO类图结构")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
