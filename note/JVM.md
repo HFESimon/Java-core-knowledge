@@ -717,15 +717,41 @@ serverSocketChannel.configureBlocking(false);
 
 对输入流只能进行读操作，对输出流只能进行写操作，程序中需要根据待传输数据的不同特性而使用不同的流。
 
-**Java IO流对象**
+##### 1.8.2.3 Java IO流对象
 
-1. 输入字节流 InputStream
+###### 1.8.2.3.1 输入字节流 InputStream
 
-   a) InputStream是所有数据字节流的父类，它是一个抽象类。
+1. InputStream是所有输入字节流的父类，它是一个抽象类。
+2. ByteArrayInputStream, StringBufferInputStream, FileInputStream是三种基本的介质流，它们分别从 Byte数组、StringBuffer、和本地文件中读取数据，PipedInputStream是从与其他线程共用的管道中读取数据。
+3. ObjectInputStream和所有FileInputStream 的子类都是装饰流(装饰器模式的主角)。
 
-   b) 
+###### 1.8.2.3.2 输出字节流 OutputStream
 
+1. OutputStream是所有输出字节流的父类，它是一个抽象类。
+2. ByteArrayOutputStream, FIleOutputStream是两种基本的介质，它们分别向Byte 数组，和本地文件中写入数据。PipedOutputStream是从与其他线程共用的管道中写入数据。
+3. ObjectOutputStream和所有FileOutputStream的子类都是装饰流。
 
+**字节流的输入与输出对应图**
+
+![字节流输入输出对应图](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_24.png "字节流输入输出对应图")
+
+​		图中蓝色为主要对应部分，红色为不对应部分，黑色的虚线部分代表这些流一般需要搭配使用。从上图中可以看出Java IO中的字节流是非常对称的，下面介绍一些红色部分的不对称的几个类：
+
+1. LineNumberInputStream 主要完成从流中读取数据时，会得到相应的行号，至于什么时候分行、在哪里分行是由该类主动确定的，并不是在原始中有这样一个行号。在输出部分没有对应的部分，我们完全可以自己建立一个LineNumberOutputStream，在最初写入时会有一个基准的行号，以后每次遇到换行时会在下一行添加一个行号，看起来也是可以的。好像更不入流了。
+2. PushbackInputStream 的功能是查看最后一个字节，不满意就放入缓冲区。主要用在编译器的语法、词法分析部分。输出部分的BufferedOutputStream 几乎实现相近的功能。
+3. StringBufferInputStream 已经被Deprecated，本身就不应该出现在InputStream 部分，主要因为String 应该属于字符流的范围。已经被废弃了，当然输出部分也没有必要需要它了！还允许它存在只是为了保持版本的向下兼容而已。
+4. SequenceInputStream 可以认为是一个工具类，将两个或者多个输入流当成一个输入流依次读取。完全可以从IO 包中去除，还完全不影响IO 包的结构，却让其更“纯洁”――纯洁的Decorator 模式。
+5. PrintStream 也可以认为是一个辅助工具。主要可以向其他输出流，或者FileInputStream 写入数据，本身内部实现还是带缓冲的。本质上是对其它流的综合运用的一个工具而已。一样可以踢出IO 包！System.out 和System.out 就是PrintStream 的实例。
+
+###### 1.8.2.3.3 字符输入流 Reader
+
+1. Reader是所有的输入字符流的父类，它是一个抽象类。
+2. CharReader, StringReader是两种基本的介质流，它们分别从Char数组、Sting中读取数据。PipedInputReader 是从与其他线程共用的管道中读取数据。
+3. BufferedReader 很明显是一个装饰器，它和其子类复制装饰其他Reader对象。
+4. FilterReader 是所有自定义具体装饰流的父类，其子类PushbackReader 对Reader 对象进行装饰，回增加一个行号。
+5. InputStreamReader 是一个连接字节流和字符流的桥梁，它将字节流转变为字符流。FileReader 可以说是一个达到此功能常用的工具类，在其源代码中明显使用了将FileInputStream转变为Reader的方法。我们可以从这个类中得到一定的技巧。Reader中各个类的用途和使用方法基本和InputStream中的类使用一致。
+
+###### 1.8.2.3.4 字符输出流 Writer
 
 
 
