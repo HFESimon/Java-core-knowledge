@@ -717,7 +717,13 @@ serverSocketChannel.configureBlocking(false);
 
 对输入流只能进行读操作，对输出流只能进行写操作，程序中需要根据待传输数据的不同特性而使用不同的流。
 
+**Java IO流对象**
 
+1. 输入字节流 InputStream
+
+   a) InputStream是所有数据字节流的父类，它是一个抽象类。
+
+   b) 
 
 
 
