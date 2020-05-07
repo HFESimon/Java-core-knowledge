@@ -746,16 +746,57 @@ serverSocketChannel.configureBlocking(false);
 ###### 1.8.2.3.3 字符输入流 Reader
 
 1. Reader是所有的输入字符流的父类，它是一个抽象类。
-2. CharReader, StringReader是两种基本的介质流，它们分别从Char数组、Sting中读取数据。PipedInputReader 是从与其他线程共用的管道中读取数据。
+2. CharArrayReader, StringReader是两种基本的介质流，它们分别从Char数组、Sting中读取数据。PipedInputReader 是从与其他线程共用的管道中读取数据。
 3. BufferedReader 很明显是一个装饰器，它和其子类复制装饰其他Reader对象。
 4. FilterReader 是所有自定义具体装饰流的父类，其子类PushbackReader 对Reader 对象进行装饰，回增加一个行号。
 5. InputStreamReader 是一个连接字节流和字符流的桥梁，它将字节流转变为字符流。FileReader 可以说是一个达到此功能常用的工具类，在其源代码中明显使用了将FileInputStream转变为Reader的方法。我们可以从这个类中得到一定的技巧。Reader中各个类的用途和使用方法基本和InputStream中的类使用一致。
 
 ###### 1.8.2.3.4 字符输出流 Writer
 
+1. Writer 是所有输出字符流的父类，它是一个抽象类。
+2. CharArrayWriter, StringWriter 是两种基本的介质流，它们分别向Char 数组、String 中写入数据。PipedInputWriter是从与其他线程共用的管道中读取数据。
+3. BufferedWriter很明显是一个装饰器，他和其子类复制装饰其他Reader对象。
+4. FilterWriter和PrintStream极其类似，功能和使用也非常相似。
+5. OutputStreamWriter 是OutputStream 到Writer 转换到桥梁，它的子类FileWriter其实就是一个实现此功能的具体类(具体可以研究一下SourceCode)。功能和使用OutputStream极其类似。
 
+**字符流的输入与输出对应图**
 
+![字符流输入输出对应图](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_25.png "字符流输入输出对应图")
 
+###### 1.8.2.3.5 字符流与字节流的转换
+
+转换流的特点：
+
+1. 它是字符流和字节流之间的桥梁。
+2. 可对读取到的字节流数据经过指定编码转换成字符。
+3. 可对读取到的字读数据经过指定编码转换成字节。
+
+何时使用转换流？：
+
+1. 当字节和字符之间有转换动作时。
+2. 流操作的数据需要编码或解码时。
+
+具体的对象体现：
+
+1. InputStreamReader：字节到字符的桥梁。
+2. OutputStreamWriter：字符到字节的桥梁。
+
+这两个流对象是字符体系中的成员，它们有转换的作用，本身又是字符流，所以在构造的时候需要传入字节流对象进来。
+
+###### 1.8.2.3.6 File类
+
+​		File类是对文件系统中文件以及文件夹进行封装的对象，可以通过对象的思想来操作文件和文件夹。File类保存文件或目录的各种数据信息，包括文件名、文件长度、最后修改时间、是否可读、获取当前文件的路径名、判断文件是否存在、获取当前目录中的文件列表、创建、删除文件和目录等方法。
+
+###### 1.8.2.3.7 RandomAccessFile类
+
+​		该对象不是流体系中的一员，其封装了字节流，同时还封装了一个缓冲区(字符数组)，通过内部的指针来操作字符数组中的数据。该对象特点：
+
+1. 该对象只能操作文件，所以构造函数接受两种数据类型的参数：字符串文件路径、File对象
+2. 该对象既可以对文件进行读操作也能进行写操作，在进行对象实例化时可指定操作模式(r, rw)。
+
+注意：**该对象在实例化时，如果要操作的文件不存在，会自动创建；如果文件存在，写数据未指定位置，会从头开始写，即覆盖原有的内容。**可以用于多线程下载或多个线程同时写数据到文件。---参考文章[Java IO学习整理](https://zhuanlan.zhihu.com/p/25418336)
+
+---
 
 
 
