@@ -794,9 +794,63 @@ serverSocketChannel.configureBlocking(false);
 1. 该对象只能操作文件，所以构造函数接受两种数据类型的参数：字符串文件路径、File对象
 2. 该对象既可以对文件进行读操作也能进行写操作，在进行对象实例化时可指定操作模式(r, rw)。
 
-注意：**该对象在实例化时，如果要操作的文件不存在，会自动创建；如果文件存在，写数据未指定位置，会从头开始写，即覆盖原有的内容。**可以用于多线程下载或多个线程同时写数据到文件。---参考文章[Java IO学习整理](https://zhuanlan.zhihu.com/p/25418336)
+注意：**该对象在实例化时，如果要操作的文件不存在，会自动创建；如果文件存在，写数据未指定位置，会从头开始写，即覆盖原有的内容。**可以用于多线程下载或多个线程同时写数据到文件。---参考文章：[Java IO学习整理](https://zhuanlan.zhihu.com/p/25418336)
 
 ---
+
+#### 1.8.3 Java NIO
+
+##### 1.8.3.1 NIO简介
+
+​		在JDK1.4之前的IO系统中，提供的都是面向流的I/O系统，系统一次一个字节地处理数据，一个输入流产生一个字节的数据，一个输出流消费一个字节的数据，面向流的I/O速度非常慢，在JDK1.4后推出了NIO即New I/O。这是一个面向块的I/O系统，系统以块的方式处理数据，每一个操作在一步中产生或消费一个数据库，按块处理要比按字节处理数据快的多。
+
+![Java NIO](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_26.png "Java NIO")
+
+#### 1.8.3.2 NIO中的几个基础概念
+
+​		在NIO中有几个比较关键的概念：Channel(通道)，Buffer(缓冲区)，Selector(选择器)。
+
+​		首先从Channel说起吧，通道顾名思义就是通向什么的道路，为IO提供渠道。在传统IO中，我们要读取一个文件中的内容，通常是像下面这样读取的：
+
+```java
+public class Test {
+    public static void main(String[] args) throws IOException  {
+        File file = new File("data.txt");
+        InputStream inputStream = new FileInputStream(file);
+        byte[] bytes = new byte[1024];
+        inputStream.read(bytes);
+        inputStream.close();
+    }  
+}
+```
+
+​		这里的`InputStream`实际上就是为读取文件提供一个通道的。因此可以将NIO中的Channel与传统的Stream来类比，但是需要注意的是，在传统IO中，Stream是单向的，比如`InputStream`只能进行读取操作，`OutputStream`只能进行写操作。而Channel是双向的，既可以用来进行读操作，又可用于写操作。
+
+​		Buffer(缓冲区)是NIO中一个非常重要的东西，NIO中所有数据的读和写都离不开Buffer。比如上面的一段代码中，读取的数据时放在byte数组当中，而在NIO中，读取的数据只能放在Buffer中。同样地，写入数据也是先写入到Buffer中。
+
+​		下面简单介绍一下NIO中最核心的一个东西：Selector。可以说它是NIO中最关键的一个部分，Selector的作用就是用来轮询每个注册的Channel，一旦发现Channel有注册的事件发生，便获取事件然后进行处理。例：
+
+![selector](https://images0.cnblogs.com/i/288799/201408/181105032681855.jpg "selector")
+
+​		用单线程处理一个Selector，然后通过<font color="#dd000">`Selector.select()`</font>方法来获取到达事件，在获取了到达事件之后，就可以逐个地对这些事件进行响应处理。
+
+##### 1.8.3.3 Channel(通道)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
