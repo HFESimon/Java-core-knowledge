@@ -836,11 +836,89 @@ public class Test {
 
 ##### 1.8.3.3 Channel(通道)
 
+​		前面已经提到Channel和传统IO中的Stream很相似。主要区别为：通道是双向的，通过一个Channel既可以进行读，也可以进行写；Stream是单向的，通过一个Stream只能进行读或写。
 
+​		常用的几种通道：
 
+- FileChannel - 从文件或向文件写入数据
+- SocketChannel - 以TCP协议来向网络连接的两端读写数据
+- ServerSocketChannel - 监听客户端发起的TCP连接，并为每个TCP连接创建一个新的SocketChannel来进行数据读写
+- DatagramChannel - 以UDP协议来向网络连接的两端读写数据
 
+​		以通过FileChannel来向文件中写入数据为例子：
 
+```java
+public class Test {
+    public static void main(String[] args) throws IOException  {
+        File file = new File("data.txt");
+        FileOutputStream outputStream = new FileOutputStream(file);
+        FileChannel channel = outputStream.getChannel();
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        String string = "java nio";
+        buffer.put(string.getBytes());
+        buffer.flip();     //此处必须要调用buffer的flip方法
+        channel.write(buffer);
+        channel.close();
+        outputStream.close();
+    }  
+}
+```
 
+​		通过上面的程序回想工程目录下data.txt写入字符串`java nio`，<font color="#dd000">注意在调用Channel的`channel.write()`方法之前必须调用Buffer的` buffer.flip()`方法，否则无法正确写入内容。</font>
+
+> 注：<font color="#dd000">`buffer.flip()`</font>英文API: Flips this buffer. The limit is set to the current position and then the position is set to zero. If the mark is defined then it is discarded.中文释义："反转此缓冲区。首先对当前位置设置限制，然后将该位置设置为零。如果已定义了标记，则丢弃该标记。"; 
+>
+> ​		意思大概是这样的：调换这个buffer的当前位置，并且设置当前位置是0。说的意思就是：将缓存字节数组的指针设置为数组的开始序列即数组下标0。这样就可以从buffer开头，对该buffer进行遍历(读取)了。 
+>
+> ​		buffer中的flip方法涉及到buffer中的<font color="#dd000">Capacity,Position和Limit</font>三个概念。其中Capacity在读写模式下都是固定的，就是我们分配的缓冲大小,Position类似于读写指针，表示当前读(写)到什么位置,Limit在写模式下表示最多能写入多少数据，此时和Capacity相同，在读模式下表示最多能读多少数据，此时和缓存中的实际数据大小相同。在写模式下调用flip方法，那么limit就设置为了position当前的值(即当前写了多少数据),position会被置为0，以表示读操作从缓存的头开始读。<font color="#dd000">也就是说调用flip之后，读写指针指到缓存头部，并且设置了最多只能读出之前写入的数据长度(而不是整个缓存的容量大小)。</font>
+
+​		如《Think in Java》P552:
+
+```java
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+
+public class GetChannel {
+    private static final int SIZE = 1024;
+
+    public static void main(String[] args) throws Exception {
+        // 获取通道，该通道允许写操作
+        FileChannel fc = new FileOutputStream("data.txt").getChannel();
+        // 将字节数组包装到缓冲区中
+        fc.write(ByteBuffer.wrap("Some text".getBytes()));
+        // 关闭通道
+        fc.close();
+
+        // 随机读写文件流创建的管道
+        fc = new RandomAccessFile("data.txt", "rw").getChannel();
+        // fc.position()计算从文件的开始到当前位置之间的字节数
+        System.out.println("此通道的文件位置：" + fc.position());
+        // 设置此通道的文件位置,fc.size()此通道的文件的当前大小,该条语句执行后，通道位置处于文件的末尾
+        fc.position(fc.size());
+        // 在文件末尾写入字节
+        fc.write(ByteBuffer.wrap("Some more".getBytes()));
+        fc.close();
+
+        // 用通道读取文件
+        fc = new FileInputStream("data.txt").getChannel();
+        ByteBuffer buffer = ByteBuffer.allocate(SIZE);
+        // 将文件内容读到指定的缓冲区中
+        fc.read(buffer);
+        buffer.flip();//此行语句一定要有
+        while (buffer.hasRemaining()) {
+            System.out.print((char)buffer.get());
+        }
+                  fc.close();
+    }
+}
+```
+
+​		<font color="#dd000">注意：buffer.flip();一定得有，如果没有，就是从文件最后开始读取的，当然读出来的都是byte=0时候的字符。通过buffer.flip();这个语句，就能把buffer的当前位置更改为buffer缓冲区的第一个位置。</font>参考博客：[java.nio.Buffer flip()方法的用法详解](https://www.cnblogs.com/woshijpf/articles/3723364.html)
+
+##### 1.8.3.4 Buffer(缓冲区)
 
 
 
