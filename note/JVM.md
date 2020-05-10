@@ -916,7 +916,7 @@ public class GetChannel {
 }
 ```
 
-​		<font color="#dd000">注意：buffer.flip();一定得有，如果没有，就是从文件最后开始读取的，当然读出来的都是byte=0时候的字符。通过buffer.flip();这个语句，就能把buffer的当前位置更改为buffer缓冲区的第一个位置。</font>参考博客：[java.nio.Buffer flip()方法的用法详解](https://www.cnblogs.com/woshijpf/articles/3723364.html)
+​		<font color="#dd000">注意：buffer.flip();一定得有，因为你写完数据后position是指向数据的尾部的。如果没有，就是从文件最后开始读取的，通过buffer.flip();这个语句，就能把buffer的当前位置更改为buffer缓冲区的第一个位置，并把limit值设为数据的尾部即反转缓冲区。这样读出的数据就是正确的</font>参考博客：[java.nio.Buffer flip()方法的用法详解](https://www.cnblogs.com/woshijpf/articles/3723364.html)
 
 ##### 1.8.3.4 Buffer(缓冲区)
 
@@ -947,7 +947,7 @@ public class GetChannel {
 
 ​		**在使用Buffer的时候，实际操作的就是这四个属性的值。**Buffer 类并没有包括 get() 或 put() 函数。但是，每一个Buffer 的子类都有这两个函数，但它们所采用的参数类型，以及它们返回的数据类型，对每个子类来说都是唯一的，所以它们不能在顶层 Buffer 类中被抽象地声明。它们的定义必须被特定类型的子类所遵从。若不加特殊说明，我们在下面讨论的一些内容，都是以 ByteBuffer 为例。
 
-​		相对存取和绝对存取：
+​		**相对存取和绝对存取：**
 
 ```java
 public abstract class ByteBuffer extends Buffer implements Comparable {  
@@ -961,7 +961,7 @@ public abstract class ByteBuffer extends Buffer implements Comparable {
 
 ​		如上段代码，有不带索引参数的方法和带索引参数的方法。不带索引的get和put，这些调用执行完后，position的值会自动前进。对于put，如果多次调用导致位置超出limit，则会抛出BufferOverflowException异常；对于get，如果位置不小于limit，则会抛出BufferUnderflowException异常。不带索引参数的方法称为相对存取，相对存取会自动影响缓冲区的位置属性。带索引的方法，称为绝对存取，绝对存储不会影响缓冲区的位置属性，但如果你提供的索引值超出范围(负数或不小于上界)，也将抛出IndexOutOfBoundsException异常。 
 
-​		翻转：
+​		**翻转：**
 
 ​		我们把hello这个串通过put存入一个ByteBuffer中
 
@@ -970,7 +970,40 @@ ByteBuffer buffer = ByteBuffer.allocate(1024);
 buffer.put((byte)'H').put((byte)'e').put((byte)'l').put((byte)'l').put((byte)'o'); 
 ```
 
-​		此时position = 5，limit = capacity = 1024。现在我们要从正确的位置从buffer读数据
+​		此时position = 5，limit = capacity = 1024。现在我们要从正确的位置从buffer读数据，我们可以把position置为0。如果把上界设置成当前position的位置即5，那么limit就是结束的位置。上界指明了缓冲区有效内容的末端。手动实现缓冲区翻转：
+
+```java
+buffer.limit(buffer.position()).position(0);	//这行代码即是buffer.flip();的手动实现
+```
+
+​		此外，`rewind()`函数与`flip()`相似，但不会将limit值置为当前position值，只是将position值置为0。
+
+​		**释放(Drain):**
+
+​		这里的释放，指的是缓冲区通过 put 填充数据后，然后被读出的过程。上面讲了，要读数据，首先得翻转。那么怎么读呢？<font color="#dd000">`hasRemaining() `</font>函数会在释放缓冲区时告诉你是否已经达到缓冲区的上界：
+
+```java
+for (int i = 0; buffer.hasRemaining(); i++) {  
+    myByteArray[i] = buffer.get();  
+}  
+```
+
+​		很明显，上面的代码每次循环都要判断元素是否到达上界，<font color="#dd000">`remaining()`</font>函数将告知你从当前位置到上界还剩余的元素数目，因此可做如下改进：
+
+```java
+int count = buffer.remaining();  
+for (int i = 0; i < count; i++) {  
+    myByteArray[i] = buffer.get();  
+}  
+```
+
+​		**压缩(Compact)**
+
+
+
+
+
+
 
 
 
