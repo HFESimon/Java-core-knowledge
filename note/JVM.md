@@ -806,7 +806,7 @@ serverSocketChannel.configureBlocking(false);
 
 ![Java NIO](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_26.png "Java NIO")
 
-#### 1.8.3.2 NIO中的几个基础概念
+##### 1.8.3.2 NIO中的几个基础概念
 
 ​		在NIO中有几个比较关键的概念：Channel(通道)，Buffer(缓冲区)，Selector(选择器)。
 
@@ -920,13 +920,57 @@ public class GetChannel {
 
 ##### 1.8.3.4 Buffer(缓冲区)
 
+​		Buffer顾名思义缓冲区，实际上是一个容器，一个连续的数组。Buffer 类是 Java NIO 的构造基础。一个 Buffer 对象是固定数量的数据的容器，其作用是一个存储器，或者分段运输区，在这里，数据可被存储并在之后用于检索。缓冲区可以被写满或释放。对于每个非布尔原始数据类型都有一个缓冲区类。Channel提供从文件、网络读取和写入数据的渠道，但是读取或写入的数据都必须经由Buffer。具体看下面这张图即可理解：
 
+![buffer](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_27.png "buffer")
 
+​		上图描述了从一个客户端向服务端发送数据，然后服务端接收数据的过程。客户端发送数据时，必须先将数据存入Buffer中，然后将Buffer中的内容写入Channel。服务端这边接收数据必须通过Channel将数据读入Buffer中，然后再从Buffer中取出数据来处理。
 
+​		在BIO中，Buffer是一个顶层父类，它是一个抽象类，常用的Buffer子类有：
 
+- ByteBuffer
+- IntBuffer
+- CharBuffer
+- LongBuffer
+- DoubleBuffer
+- FloatBuffer
+- ShortBuffer
 
+​		如果是对于文件读写，上面几种Buffer都可能会用到。但是对于网络读写来说，用的最多的是ByteBuffer。<font color="#dd000">注意，是没有BooleanBuffer之说的</font>。尽管缓冲区作用于它们存储的原始数据类型，但缓冲区十分倾向于处理字节。非字节缓冲区可以在后台执行从字节或到字节的转换，这取决于缓冲区是如何创建的。 
 
+​		缓冲区的四个属性，所有的缓冲区都具有四个属性来提供关于其所包含的数据元素的信息，这四个属性尽管简单，但其至关重要，需熟记于心：
 
+1. 容量(Capacity)：缓冲区能够容纳的数组元素的最大容量。这一容量在缓冲区创建时被设定，并且永远不能改变。
+2. 上界(Limit)：缓冲区的第一个不能被读或写的元素。缓冲区创建时，limit值等于capacity的值。假设capacity=1024，我们在程序中设置limit=512，则说明Buffer容量为1024，但是从512后既不能读也不能写，可以理解为Buffer实际容量为512。
+3. 位置(Position)：下一个要被读或写的元素的索引，位置会自动由相应的get()和put()函数更新。
+4. 标记(Mark)：一个备忘位置。标记在未设定前为未定义(undefined)。使用场景是，假设缓冲区有10个元素，position=2，现在只想发送6-10之间的数据，此时可以使用`buffer.mark(buffer.position())`把当前的position记入mark中，然后`buffer.position(6)`，此时发给Channel的数据就是6-10的数据。发送完成后调用`buffer.reset()`使得position = mark，mark用于临时记录位置。
+
+​		**在使用Buffer的时候，实际操作的就是这四个属性的值。**Buffer 类并没有包括 get() 或 put() 函数。但是，每一个Buffer 的子类都有这两个函数，但它们所采用的参数类型，以及它们返回的数据类型，对每个子类来说都是唯一的，所以它们不能在顶层 Buffer 类中被抽象地声明。它们的定义必须被特定类型的子类所遵从。若不加特殊说明，我们在下面讨论的一些内容，都是以 ByteBuffer 为例。
+
+​		相对存取和绝对存取：
+
+```java
+public abstract class ByteBuffer extends Buffer implements Comparable {  
+    // This is a partial API listing  
+    public abstract byte get( );   
+    public abstract byte get (int index);   
+    public abstract ByteBuffer put (byte b);   
+    public abstract ByteBuffer put (int index, byte b);  
+}  
+```
+
+​		如上段代码，有不带索引参数的方法和带索引参数的方法。不带索引的get和put，这些调用执行完后，position的值会自动前进。对于put，如果多次调用导致位置超出limit，则会抛出BufferOverflowException异常；对于get，如果位置不小于limit，则会抛出BufferUnderflowException异常。不带索引参数的方法称为相对存取，相对存取会自动影响缓冲区的位置属性。带索引的方法，称为绝对存取，绝对存储不会影响缓冲区的位置属性，但如果你提供的索引值超出范围(负数或不小于上界)，也将抛出IndexOutOfBoundsException异常。 
+
+​		翻转：
+
+​		我们把hello这个串通过put存入一个ByteBuffer中
+
+```java
+ByteBuffer buffer = ByteBuffer.allocate(1024);  
+buffer.put((byte)'H').put((byte)'e').put((byte)'l').put((byte)'l').put((byte)'o'); 
+```
+
+​		此时position = 5，limit = capacity = 1024。现在我们要从正确的位置从buffer读数据
 
 
 
