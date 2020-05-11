@@ -1025,11 +1025,63 @@ for (int i = 0; i < count; i++) {
 
 ​		**缓冲区的比较：**
 
-​		有时候比较两个缓冲区所包含的数据是很有必要的。
+​		有时候比较两个缓冲区所包含的数据是很有必要的。所有类型的缓冲区都提供了一个常规的`equals()`函数用以测试两个缓冲区的是否相等，以及一个`compareTo()`函数用以比较缓冲区。
 
+​		两个缓冲区被认为相等的充要条件：
 
+- 两个对象类型相同。包含不同类型的buffer永远不会相等，而且buffer 绝不会等于非 buffer对象。
+- 两个对象都剩余同样数量(num = limit - position)的元素。Buffer的容量不需要相同，而且缓冲区中剩余数据的索引也不必相同。
+- 在每个缓冲区中应被`get()`函数返回的剩余数据元素序列([position, limit - 1] 位置对应的元素序列)必须一致。
 
+​		缓冲区也支持用`compareTo()`函数以词典顺序进行比较，当然，这是所有的缓冲区实现了 java.lang.Comparable 语义化的接口。这也意味着缓冲区数组可以通过调用`java.util.Arrays.sort()`函数按照它们的内容进行排序。
 
+​		 与`equals()`相似，`compareTo()`不允许不同对象间进行比较。但`compareTo()`更为严格：如果你传递一个类型错误的对象，它会抛出 ClassCastException 异常，但`equals()`只会返回 false。 
 
+​		比较是针对每个缓冲区你剩余数据(从 position 到 limit)进行的，与它们在`equals()`中的方式相同，直到不相等的元素被发现或者到达缓冲区的上界。如果一个缓冲区在不相等元素发现前已经被耗尽，较短的缓冲区被认为是小于较长的缓冲区。这里有个顺序问题：下面小于零的结果(表达式的值为 true)的含义是 buffer2 < buffer1。切记，这代表的并不是 buffer1 < buffer2。
 
+```java
+if (buffer1.compareTo(buffer2) < 0) {  
+    // do sth, it means buffer2 < buffer1，not buffer1 < buffer2  
+    doSth();  
+}  
+```
 
+​		**批量移动：**
+
+​		缓冲区的设计目的就是为了能够高效传输数据，一次移动一个数据元素并不高效。如你在下面的程序清单中看到的那样，Buffer API提供了向缓冲区意外批量移动数据元素的函数：
+
+```java
+public abstract class ByteBuffer extends Buffer implements Comparable {  
+    public ByteBuffer get(byte[] dst);  
+    public ByteBuffer get(byte[] dst, int offset, int length);  
+    public final ByteBuffer put(byte[] src);   
+    public ByteBuffer put(byte[] src, int offset, int length);  
+}
+```
+
+​		以 get 为例，它将缓冲区中的内容复制到指定的数组中，当然是从 position 开始。第二种形式使用 offset 和 length 参数来指定复制到目标数组的子区间。这些批量移动的合成效果与前文所讨论的循环是相同的，但是这些方法可能高效得多，因为这种缓冲区实现能够利用本地代码或其他的优化来移动数据。 
+
+​		 批量移动总是具有指定的长度。也就是说，你总是要求移动固定数量的数据元素。因此，`get(dist)`和`get(dist, 0, dist.length)`是等价的。 
+
+​		对于以下几种情况的数据复制会发生异常：
+
+- 如果你所要求的数量的数据不能被传送，那么不会有数据被传递，缓冲区的状态保持不变，同时抛出BufferUnderflowException异常。
+- 如果缓冲区中的数据不够完全填满数组，你会得到一个异常。这意味着如果你想将一个小型缓冲区传入一个大型数组，你需要明确地指定缓冲区中剩余的数据长度。
+
+​		如果缓冲区存有比数组能容纳的数量更多的数据，你可以重复利用如下代码进行读取：
+
+```java
+byte[] smallArray = new Byte[10];  
+
+while (buffer.hasRemaining()) {  
+    int length = Math.min(buffer.remaining(), smallArray.length);  
+    // length = 两个数中小些的那个数
+    buffer.get(smallArray, 0, length);  
+    // 每取出一部分数据后，即调用 processData 方法，length 表示实际上取到了多少字节的数据  
+    processData(smallArray, length);  
+} 
+```
+
+​		 `put()`的批量版本工作方式相似，只不过它是将数组里的元素写入 buffer 中而已，这里不再赘述。
+
+​		**创建缓冲区：**
