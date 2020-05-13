@@ -1085,3 +1085,28 @@ while (buffer.hasRemaining()) {
 ​		 `put()`的批量版本工作方式相似，只不过它是将数组里的元素写入 buffer 中而已，这里不再赘述。
 
 ​		**创建缓冲区：**
+
+​		Buffer 的七种子类，没有一种能够直接实例化，它们都是抽象类，但是都包含静态工厂方法来创建相应类的新实例。这部分讨论中，将以 CharBuffer 类为例，对于其它六种主要的缓冲区类也是适用的。下面是创建一个缓冲区的关键函数，对所有的缓冲区类通用：
+
+```java
+public abstract class CharBuffer extends Buffer implements CharSequence, Comparable {  
+    // This is a partial API listing  
+  
+    public static CharBuffer allocate (int capacity);  
+    public static CharBuffer wrap (char [] array);  
+    public static CharBuffer wrap (char [] array, int offset, int length);  
+  
+    public final boolean hasArray();  
+    public final char [] array();  
+    public final int arrayOffset();  
+} 
+```
+
+
+
+
+
+
+
+
+
