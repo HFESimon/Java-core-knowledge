@@ -1102,6 +1102,32 @@ public abstract class CharBuffer extends Buffer implements CharSequence, Compara
 } 
 ```
 
+​		新的缓冲区是由分配(allocate)或包装(wrap)创建的。分配(allocate)操作创建一个缓冲区对象并分配一个私有的空间来储存容量大小的数据元素。包装(wrap)操作创建一个缓冲区对象但是不分配任何空间来储存数据元素。它使用你所提供的数组作为存储空间来储存缓存区中的数据元素。demo如下：
+
+```java
+// 这段代码隐含地从堆空间中分配了一个 char 型数组作为备份存储器来储存 100 个 char 变量。  
+CharBuffer charBuffer = CharBuffer.allocate (100);  
+/** 
+ * 这段代码构造了一个新的缓冲区对象，但数据元素会存在于数组中。这意味着通过调用 put() 函数造成的对缓 
+ * 冲区的改动会直接影响这个数组，而且对这个数组的任何改动也会对这个缓冲区对象可见。 
+ */  
+char [] myArray = new char [100];   
+CharBuffer charbuffer = CharBuffer.wrap (myArray);  
+/** 
+ * 带有 offset 和 length 作为参数的 wrap() 函数版本则会构造一个按照你提供的 offset 和 length 参 
+ * 数值初始化 position 和 limit 的缓冲区。 
+ * 
+ * 这个函数并不像你可能认为的那样，创建了一个只占用了一个数组子集的缓冲区。这个缓冲区可以存取这个数组 
+ * 的全部范围；offset 和 length 参数只是设置了初始的状态。调用 clear() 函数，然后对其进行填充， 
+ * 直到超过 limit，这将会重写数组中的所有元素。 
+ * 
+ * slice() 函数可以提供一个只占用备份数组一部分的缓冲区。 
+ * 
+ * 下面的代码创建了一个 position 值为 12，limit 值为 54，容量为 myArray.length 的缓冲区。 
+ */  
+CharBuffer charbuffer = CharBuffer.wrap (myArray, 12, 42);  
+```
+
 
 
 
