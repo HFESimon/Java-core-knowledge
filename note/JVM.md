@@ -943,7 +943,7 @@ public class GetChannel {
 1. 容量(Capacity)：缓冲区能够容纳的数组元素的最大容量。这一容量在缓冲区创建时被设定，并且永远不能改变。
 2. 上界(Limit)：缓冲区的第一个不能被读或写的元素。缓冲区创建时，limit值等于capacity的值。假设capacity=1024，我们在程序中设置limit=512，则说明Buffer容量为1024，但是从512后既不能读也不能写，可以理解为Buffer实际容量为512。
 3. 位置(Position)：下一个要被读或写的元素的索引，位置会自动由相应的get()和put()函数更新。
-4. 标记(Mark)：一个备忘位置。标记在未设定前为未定义(undefined)。使用场景是，假设缓冲区有10个元素，position=2，现在只想发送6-10之间的数据，此时可以使用`buffer.mark(buffer.position())`把当前的position记入mark中，然后`buffer.position(6)`，此时发给Channel的数据就是6-10的数据。发送完成后调用`buffer.reset()`使得position = mark，mark用于临时记录位置。
+4. 标记(Mark)：一个备忘位置。标记在未设定前为未定义(undefined)。使用场景是，假设缓冲区有10个元素，position=2，现在只想发送6-10之间的数据，此时可以使用`buffer.mark(buffer.position())`把当前的position = 2 记入mark中，然后`buffer.position(6)`修改position值为6，此时发给Channel的数据就是6-10的数据。发送完成后调用`buffer.reset()`使得position = mark = 2，mark用于临时记录位置。
 
 ​		**在使用Buffer的时候，实际操作的就是这四个属性的值。**Buffer 类并没有包括 get() 或 put() 函数。但是，每一个Buffer 的子类都有这两个函数，但它们所采用的参数类型，以及它们返回的数据类型，对每个子类来说都是唯一的，所以它们不能在顶层 Buffer 类中被抽象地声明。它们的定义必须被特定类型的子类所遵从。若不加特殊说明，我们在下面讨论的一些内容，都是以 ByteBuffer 为例。
 
@@ -1140,7 +1140,32 @@ CharBuffer charbuffer = CharBuffer.wrap (myArray, 12, 42);
 
 ​		缓冲区不限于管理数组中的外部数据，它们也能管理其他缓冲区中的外部数据。当一个管理其他缓冲器所包含的数据元素的缓冲器被创建时，这个缓冲器被称为视图缓冲器。
 
+​		视图存储器总是通过调用已存在的存储器实例中的函数来创建。使用已存在的存储器实例中的工厂方法意味着视图对象为原始存储器的你部实现细节私有。数据元素可以直接存取，无论它们是存储在数组中还是以一些其他的方式，而不需经过原始缓冲区对象的 get()/put() API。如果原始缓冲区是直接缓冲区，该缓冲区(视图缓冲区)的视图会具有同样的效率优势。
 
+​		 继续以 CharBuffer 为例，但同样的操作可被用于任何基本的缓冲区类型。用于复制缓冲区的API：
 
+```java
+public abstract class CharBuffer extends Buffer implements CharSequence, Comparable {  
+    // This is a partial API listing  
+      
+    public abstract CharBuffer duplicate();  
+    public abstract CharBuffer asReadOnlyBuffer();  
+    public abstract CharBuffer slice();  
+}  
+```
 
+​		复制一个缓冲区会创建一个新的 Buffer 对象，但并不复制数据。原始缓冲区和副本都会操作同样的数据元素。
+
+​		`duplicate()`函数创建了一个与原始缓冲区相似的新缓冲区。两个缓冲区共享数据元素，拥有同样的容量，但每个缓冲区拥有各自的 position、limit 和 mark 属性。对一个缓冲区你的数据元素所做的改变会反映在另外一个缓冲区上。这一副本缓冲区具有与原始缓冲区同样的数据视图。如果原始的缓冲区为只读，或者为直接缓冲区，新的缓冲区将继承这些属性。`duplicate()`复制缓冲区：
+
+```java
+CharBuffer buffer = CharBuffer.allocate(8);  
+buffer.position(3).limit(6).mark().position (5);  
+CharBuffer dupeBuffer = buffer.duplicate();  
+buffer.clear(); 
+```
+
+​		`duplicate()`复制3-5数据到新缓冲区示意图：
+
+![duplicate()复制3-5数据到新缓冲区](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_30.png "duplicate()复制3-5数据到新缓冲区")
 
