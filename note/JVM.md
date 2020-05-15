@@ -1128,9 +1128,17 @@ CharBuffer charbuffer = CharBuffer.wrap (myArray);
 CharBuffer charbuffer = CharBuffer.wrap (myArray, 12, 42);  
 ```
 
+​		通过`allocte()`或者`wrap()`函数创建的缓冲区通常都是间接的。间接的缓冲区使用备份数组，你可以通过上面列出的API函数获得对这些数组的存取权。
 
+​		boolean型函数`hasArray()`告诉你这个缓冲区是否有一个可存取的备份数组。如果这个函数返回true，`array()`函数会返回这个缓冲区对象所使用的数组存储空间的引用。如果`hasArray()`返回false，若调用`array()`函数或`arrayOffset()`函数会报 UnsupportedOperationException 异常。
 
+​		如果一个缓冲区是只读的，它的备份数组将会超出limit的，即使一个数组对象被提供给`wrap()`函数。调用`array()`函数或`arrayOffset()`函数会抛出 ReadOnlyBufferException 异常以阻止你得到存取权来修改只读缓冲区的内容。如果你通过其它的方式获得了对备份数组的存取权限，对这个数组的修改也会直接影响到这个只读缓冲区。 
 
+​		`arrayOffset()`，返回缓冲区数据在数组中存储的开始位置的偏移量(从数组头0开始算)。如果你使用了带有三个参数的版本的`wrap()`函数来创建一个缓冲区，对于这个缓冲区，`arrayOffset()`会一直返回0。offset 和 length 只是指示了当前的 position 和 limit，是一个瞬间值，可以通过`clear()`来从 0 重新存数据，所以`arrayOffset()`返回的是 0。当然，如果你切分(`slice()`函数)了由一个数组提供存储的缓冲区，得到的缓冲区可能会有一个非 0 的数组偏移量。
+
+​		**复制缓冲区：**
+
+​		缓冲区不限于管理数组中的外部数据，它们也能管理其他缓冲区中的外部数据。当一个管理其他缓冲器所包含的数据元素的缓冲器被创建时，这个缓冲器被称为视图缓冲器。
 
 
 
