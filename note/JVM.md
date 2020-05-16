@@ -1169,3 +1169,29 @@ buffer.clear();
 
 ![duplicate()复制3-5数据到新缓冲区](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_30.png "duplicate()复制3-5数据到新缓冲区")
 
+​		使用`asReadOnlyBuffer()`函数生成一个只读的缓冲区视图。这与`duplicate()`相同，除了这个新的缓冲区bu允许使用`put()`，并且其`isReadOnly()`函数将返回true。
+
+​		如果一个只读的缓冲区与一个可写的缓冲区共享数据，或者有包装好的备份数组，那么对这个可写的缓冲区或直接对这个数组的改变将同时反映在所有的关联缓冲区上，包括只读缓冲区。
+
+​		`slice()`分割缓冲区与复制缓冲区相似，但`slice()`创建一个从原始缓冲区的当前position开始的新缓冲区，并且其 capacity(容量)是原始缓冲区的剩余元素数量(limit - position)。这个新缓冲区与原始缓冲区共享一段数据元素子序列。分割出来的缓冲区也会继承只读属性和直接属性。使用`slice()`分割缓冲区实例如下：
+
+```java
+CharBuffer buffer = CharBuffer.allocate(8);
+buffer.position(3).limit(5);  
+CharBuffer sliceBuffer = buffer.slice();
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
