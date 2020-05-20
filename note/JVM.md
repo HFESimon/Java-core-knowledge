@@ -1189,15 +1189,50 @@ CharBuffer sliceBuffer = buffer.slice();
 
 ​		字节是操作系统及其I/O设备使用的基本数据类型。当在JVM和操作系统间传递数据时，将其他的数据类型拆分成构成他们的字节是十分必要的，系统层次的I/O面向字节的性质可以在整个缓冲区的设计以及它们互相配合的服务中感受到。同时，操作系统是在内存区域中进行I/O操作。这些内存区域就操作系统方面而言，是相连的字节序列。于是毫无疑问，只有字节缓冲区有资格参与I/O操作。
 
+​		非字节类型的基本类型，除了布尔型都是由组合在一起的几个字节组成的。那么必然要引出另外一个问题：字节顺序。
 
+​		多字节数值被存储在内存中的方式一般被称为 endian-ness（字节顺序）。如果数字数值的最高字节 － big end（大端），位于低位地址(即 big end 先写入内存，先写入的内存的地址是低位的，后写入内存的地址是高位的)，那么系统就是大端字节顺序。如果最低字节最先保存在内存中，那么系统就是小端字节顺序。在 java.nio 中，字节顺序由 ByteOrder 类封装：
 
+```java
+package java.nio;  
+  
+public final class ByteOrder {  
+    public static final ByteOrder BIG_ENDIAN;  
+    public static final ByteOrder LITTLE_ENDIAN;  
+  
+    public static ByteOrder nativeOrder();  
+    public String toString();  
+} 
+```
 
+​		ByteOrder 类定义了决定从缓冲区中存储或检索多字节数值时使用哪一字节顺序的常量。如果你需要知道 JVM 运行的硬件平台的固有字节顺序，请调用静态类函数` nativeOrder()`。
 
+​		每一个缓冲区类都有一个能够通过调用`order()`查询的当前字节顺序：
 
+```java
+public abstract class CharBuffer extends Buffer implements Comparable, CharSequence {  
+    // This is a partial API listing  
+  
+    public final ByteOrder order();  
+}  
+```
 
+​		这个函数从ByteOrder返回两个常量之一。对于除了ByteBuffer之外的其他缓冲区类，字节顺序是一个只读属性，并且可能根据缓冲过去的建立方式而采用不同的值。除了ByteBuffer，其他通过`allocate()`或`wrap()`一个数组所创建的缓冲区将从`order()`返回与`ByteOrder.nativeOrder()`相同的数值。这是因为包含在缓冲区中的元素在 JVM 中将会被作为基本数据直接存取。
 
+​		ByteBuffer 类有所不同：默认字节顺序总是 ByteBuffer.BIG_ENDIAN，无论系统的固有字节顺序是什么。Java 的默认字节顺序是大端字节顺序，这允许类文件等以及串行化的对象可以在任何 JVM 中工作。如果固有硬件字节顺序是小端，这会有性能隐患。在使用固有硬件字节顺序时，将 ByteBuffer 的内容当作其他数据类型存取很可能高效得多。
 
+​		 为什么 ByteBuffer 类需要一个字节顺序？字节不就是字节吗？ByteBuffer 对象像其他基本数据类型一样，具有大量便利的函数用于获取和存放缓冲区内容。这些函数对字节进行编码或解码的方式取决于 ByteBuffer 当前字节顺序的设定。ByteBuffer 的字节顺序可以随时通过调用以 ByteOrder.BIG_ENDIAN 或 ByteOrder.LITTL_ENDIAN 为参数的 order() 函数来改变：
 
+```java
+public abstract class ByteBuffer extends Buffer implements Comparable {  
+    // This is a partial API listing  
+  
+    public final ByteOrder order();  
+    public final ByteBuffer order(ByteOrder bo);  
+} 
+```
+
+​		如果一个缓冲区被创建为一个 ByteBuffer 对象的视图，，那么 order() 返回的数值就是视图被创建时其创建源头的 ByteBuffer 的字节顺序。视图的字节顺序设定在创建后不能被改变，而且如果原始的字节缓冲区的字节顺序在之后被改变，它也不会受到影响。
 
 
 
