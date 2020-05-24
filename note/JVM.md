@@ -1248,7 +1248,25 @@ public abstract class ByteBuffer extends Buffer implements Comparable {
 
 ​		出于这个原因，引入了直接缓冲区的概念。直接字节缓冲区通常是 I/O 操作最好的选择。非直接字节缓冲区(即通过`allocate()`或`wrap()`创建的缓冲区)可以被传递给通道，但是这样可能导致性能损耗。通常非直接缓冲不可能成为一个本地 I/O 操作的目标。
 
+​		如果你向一个通道中传递一个非直接 ByteBuffer 对象用于写入，通道可能会在每次调用中隐含地进行下面的操作：
 
+1. 创建一个临时的直接 ByteBuffer 对象。
+2. 将非直接缓冲区的内容复制到临时直接缓冲区中。
+3. 使用临时直接缓冲区执行低层 I/O 操作。
+4. 临时直接缓冲区对象离开作用域，并最终成为被回收的无用数据。
 
+​        这可能导致缓冲区在每个 I/O 上复制并产生大量对象，而这种事都是我们极力避免的。如果你仅仅为一次使用而创建了一个缓冲区，区别并不是很明显。另一方面，如果你将在一段高性能脚本中重复使用缓冲区，分配直接缓冲区并重新使用它们会使你游刃有余。
 
+​		直接缓冲区可能比创建非直接缓冲区要花费更高的成本，它使用的内存是通过调用本地操作系统方面的代码分配的，绕过了标准 JVM 堆栈，不受垃圾回收支配，因为它们位于标准 JVM 堆栈之外。
+
+​		直接 ByteBuffer 是通过调用具有所需容量的` ByteBuffer.allocateDirect()`函数产生的。注意，`wrap()` 函数所创建的被包装的缓冲区总是非直接的。**与直接缓冲区相关的 API：**
+
+```java
+public abstract class ByteBuffer extends Buffer implements Comparable {  
+    // This is a partial API listing  
+  
+    public static ByteBuffer allocateDirect (int capacity);  
+    public abstract boolean isDirect();  
+}  
+```
 
