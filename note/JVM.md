@@ -1270,3 +1270,4 @@ public abstract class ByteBuffer extends Buffer implements Comparable {
 }  
 ```
 
+​		所有的缓冲区都提供了一个叫做`isDirect()`的 boolean 函数，来测试特定缓冲区是否为直接缓冲区。但是，**ByteBuffer 是唯一可以被分配成直接缓冲区的 Buffer。**尽管如此，如果基础缓冲区是一个直接 ByteBuffer，对于非字节视图缓冲区，`isDirect()`可以是 true。
