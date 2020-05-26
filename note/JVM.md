@@ -1271,3 +1271,41 @@ public abstract class ByteBuffer extends Buffer implements Comparable {
 ```
 
 ​		所有的缓冲区都提供了一个叫做`isDirect()`的 boolean 函数，来测试特定缓冲区是否为直接缓冲区。但是，**ByteBuffer 是唯一可以被分配成直接缓冲区的 Buffer。**尽管如此，如果基础缓冲区是一个直接 ByteBuffer，对于非字节视图缓冲区，`isDirect()`可以是 true。
+
+​		**视图缓冲区：**
+
+​		I/O基本上可以归结成组字节数据的四处传递，在进行大数据量的 I/O 操作时，很又可能你会使用各种 ByteBuffer 类去读取文件内容，接收来自网络连接的数据，等等。ByteBuffer 类提供了丰富的 API 来创建视图缓冲区。
+
+​		视图缓冲区通过已存在的缓冲区对象实例的工厂方法来创建。这种视图对象维护它自己的属性，容量，位置，上界和标记，但是和原来的缓冲区共享数据元素。
+
+​		每一个工厂方法都在原有的 ByteBuffer 对象上创建一个视图缓冲区。调用其中的任何一个方法都会创建对应的缓冲区类型，这个缓冲区是基础缓冲区的一个切分，由基础缓冲区的位置和上界决定。新的缓冲区的容量是字节缓冲区中存在的元素数量除以视图类型中组成一个数据类型的字节数，在切分中任一个超过上界的元素对于这个视图缓冲区都是不可见的。视图缓冲区的第一个元素从创建它的 ByteBuffer 对象的位置开始（`positon()`函数的返回值）。**来自 ByteBuffer 创建视图缓冲区的工厂方法：**
+
+```java
+public abstract class ByteBuffer extends Buffer implements Comparable {  
+    // This is a partial API listing  
+  
+    public abstract CharBuffer asCharBuffer();  
+    public abstract ShortBuffer asShortBuffer();  
+    public abstract IntBuffer asIntBuffer();  
+    public abstract LongBuffer asLongBuffer();  
+    public abstract FloatBuffer asFloatBuffer();  
+    public abstract DoubleBuffer asDoubleBuffer();  
+}
+```
+
+​		下面的代码创建了一个 ByteBuffer 缓冲区的 CharBuffer 视图。**演示 7 个字节的 ByteBuffer 的 CharBuffer 视图：**
+
+```java
+/** 
+ * 1 char = 2 byte，因此 7 个字节的 ByteBuffer 最终只会产生 capacity 为 3 的 CharBuffer。 
+ * 
+ * 无论何时一个视图缓冲区存取一个 ByteBuffer 的基础字节，这些字节都会根据这个视图缓冲区的字节顺序设 
+ * 定被包装成一个数据元素。当一个视图缓冲区被创建时，视图创建的同时它也继承了基础 ByteBuffer 对象的 
+ * 字节顺序设定，这个视图的字节排序不能再被修改。字节顺序设定决定了这些字节对是怎么样被组合成字符 
+ * 型变量的，这样可以理解为什么 ByteBuffer 有字节顺序的概念了吧。 
+ */  
+ByteBuffer byteBuffer = ByteBuffer.allocate(7).order (ByteOrder.BIG_ENDIAN);  
+CharBuffer charBuffer = byteBuffer.asCharBuffer();
+```
+
+![7个字节的ByteBuffer的CharBuffer视图](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_33.png "7个字节的ByteBuffer的CharBuffer视图")
