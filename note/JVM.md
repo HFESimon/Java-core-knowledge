@@ -1284,12 +1284,12 @@ public abstract class ByteBuffer extends Buffer implements Comparable {
 public abstract class ByteBuffer extends Buffer implements Comparable {  
     // This is a partial API listing  
   
-    public abstract CharBuffer asCharBuffer();  
-    public abstract ShortBuffer asShortBuffer();  
-    public abstract IntBuffer asIntBuffer();  
-    public abstract LongBuffer asLongBuffer();  
-    public abstract FloatBuffer asFloatBuffer();  
-    public abstract DoubleBuffer asDoubleBuffer();  
+    public abstract CharBuffer asCharBuffer();    
+    public abstract CharBuffer asShortBuffer();    
+    public abstract CharBuffer asIntBuffer();    
+    public abstract CharBuffer asLongBuffer();    
+    public abstract CharBuffer asFloatBuffer();    
+    public abstract CharBuffer asDoubleBuffer(); 
 }
 ```
 
@@ -1309,3 +1309,38 @@ CharBuffer charBuffer = byteBuffer.asCharBuffer();
 ```
 
 ![7个字节的ByteBuffer的CharBuffer视图](http://www.sico-technology.cn:81/images/java_note/jvm/jvm_33.png "7个字节的ByteBuffer的CharBuffer视图")
+
+​		**数据元素视图：**
+
+​		ByteBuffer类为每一种原始数据类型提供了存取和转化的方法：
+
+```java
+public abstract class ByteBuffer extends Buffer implements Comparable {  
+    public abstract short getShort( );   
+    public abstract short getShort(int index);  
+    public abstract short getInt( );   
+    public abstract short getInt(int index);  
+    ......  
+  
+    public abstract ByteBuffer putShort(short value);   
+    public abstract ByteBuffer putShort(int index, short value);  
+    public abstract ByteBuffer putInt(int value);   
+    public abstract ByteBuffer putInt(int index, int value);  
+    .......  
+} 
+```
+
+​		这些函数从当前位置开始存取 ByteBuffer 的字节数据，就好像一个数据元素被存储在那里一样。根据这个缓冲区的当前的有效的字节顺序，这些字节数据会被排列或打乱成需要的原始数据类型。
+
+​		如果`getInt()`函数被调用，从当前的位置开始的四个字节会被包装成一个 int 类型的变量然后作为函数的返回值返回。实际的返回值取决于缓冲区的当前的比特排序(byte-order)设置。**不同字节顺序取得的值是不同的：**
+
+```java
+// 大端顺序  
+int value = buffer.order(ByteOrder.BIG_ENDIAN).getInt();  
+// 小端顺序  
+int value = buffer.order(ByteOrder.LITTLE_ENDIAN).getInt();  
+  
+// 上述两种方法取得的 int 是不一样的，因此在调用此类方法前，请确保字节顺序是你所期望的 
+```
+
+​		如果你试图获取的原始类型需要比缓冲区中存在的字节数更多的字节，会抛出 BufferUnderflowException。
