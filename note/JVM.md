@@ -1343,4 +1343,6 @@ int value = buffer.order(ByteOrder.LITTLE_ENDIAN).getInt();
 // 上述两种方法取得的 int 是不一样的，因此在调用此类方法前，请确保字节顺序是你所期望的 
 ```
 
-​		如果你试图获取的原始类型需要比缓冲区中存在的字节数更多的字节，会抛出 BufferUnderflowException。
+​		如果你试图获取的原始类型需要比缓冲区中存在的字节数更多的字节，会抛出 BufferUnderflowException。参考文章：[NIO-Buffer](https://www.iteye.com/blog/zachary-guo-1457542)
+
+##### 1.8.3.5 Selector(选择器)
