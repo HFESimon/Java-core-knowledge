@@ -1706,7 +1706,7 @@ int doSelect(long timeout) {
 
 ```
 
-> 参考文献:[Selector详解](https://www.jianshu.com/p/f26f1eaa7c8e)
+> 参考文献:[Selector详解](https://www.jianshu.com/p/f26f1eaa7c8e)、[[Java NIO之Selector（选择器）](https://www.cnblogs.com/snailclimb/p/9086334.html)
 
 ---
 
